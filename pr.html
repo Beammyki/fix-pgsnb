@@ -3,137 +3,194 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ฟอร์มสร้างใบ PR (สำหรับแอดมิน)</title>
+  <title>ฟอร์มสร้างใบ PR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style> @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap'); body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; } </style>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+    * { font-family: 'Kanit', sans-serif; }
+    body { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%); min-height: 100vh; }
+    .card { background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.5); }
+    .input-style { width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid #d1d5db; font-size:14px; font-family:'Kanit',sans-serif; transition:border-color .2s,box-shadow .2s; outline:none; }
+    .input-style:focus { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,0.15); }
+    .label { display:block; font-weight:600; color:#374151; margin-bottom:6px; font-size:14px; }
+    .item-row { background:#fffbeb; border:1.5px solid #fde68a; border-radius:12px; padding:12px; transition:border-color .2s; }
+    .item-row:hover { border-color:#f59e0b; }
+    .obj-select { font-size:11px; padding:4px 6px; border:1px solid #d1d5db; border-radius:6px; background:white; font-family:'Kanit',sans-serif; color:#374151; cursor:pointer; }
+    .obj-select:focus { outline:none; border-color:#f59e0b; }
+  </style>
 </head>
-<body class="min-h-screen p-4 pb-12">
-  <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mt-4">
-    <div class="bg-amber-500 p-6 text-white text-center">
-      <h1 class="text-2xl font-bold">📝 เปิดใบขออนุมัติซื้อ (PR)</h1>
-      <p class="text-amber-100 text-sm mt-1">กรอกรายละเอียดเพื่อส่งขออนุมัติงบและแปลงเป็น PDF</p>
-    </div>
-    <form id="prForm" class="p-6 space-y-4">
-      <input type="hidden" id="ticketId">
-      <div class="p-3 bg-gray-100 rounded-lg text-sm text-gray-600 border border-gray-200" id="ticketInfo">(กำลังโหลดข้อมูลการแจ้งซ่อม...)</div>
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">แผนก *</label>
-        <select id="dept" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
-          <option value="สำนักงานส่วนกลาง">สำนักงานส่วนกลาง</option>
-          <option value="BU ก่อสร้าง">BU ก่อสร้าง</option>
-          <option value="BU ซื้อเพื่อจำหน่าย">BU ซื้อเพื่อจำหน่าย</option>
-          <option value="BU บอยเลอร์" selected>BU บอยเลอร์</option>
-          <option value="BU เซอร์วิส">BU เซอร์วิส</option>
-          <option value="BU ขนส่ง">BU ขนส่ง</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">วัตถุประสงค์ในการขอซื้อ *</label>
-        <select id="objective" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
-          <option value="เพื่อขาย/รอเบิกใช้">เพื่อขาย/รอเบิกใช้</option>
-          <option value="สินทรัพย์ถาวร">สินทรัพย์ถาวร</option>
-          <option value="ต้นทุนสั่งงานบริการ">ต้นทุนสั่งงานบริการ</option>
-          <option value="ค่าใช้จ่ายอื่นๆ">ค่าใช้จ่ายอื่นๆ</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">📅 วันที่ต้องการสินค้า *</label>
-        <input type="date" id="reqDate" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
-      </div>
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">ชื่อร้านค้า (ผู้จำหน่ายที่แนะนำ) *</label>
-        <input type="text" id="vendor" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="พิมพ์ชื่อร้านค้า">
-      </div>
-      <div>
-        <div class="flex justify-between items-center mb-2">
-          <label class="text-gray-700 font-medium">รายการสั่งซื้อ/ซ่อม *</label>
-          <button type="button" onclick="addItemRow()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg transition active:scale-95">+ เพิ่มรายการ</button>
+<body class="p-4 py-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="card rounded-2xl shadow-2xl overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white text-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10" style="background:url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"20\" cy=\"20\" r=\"30\" fill=\"white\"/><circle cx=\"80\" cy=\"80\" r=\"40\" fill=\"white\"/></svg>')"></div>
+        <div class="relative">
+          <div class="text-4xl mb-2">📋</div>
+          <h1 class="text-2xl font-bold">ใบขออนุมัติซื้อ (PR)</h1>
+          <p class="text-amber-100 text-sm mt-1">กรอกรายละเอียดเพื่อส่งขออนุมัติงบและแปลงเป็น PDF</p>
         </div>
-        <div id="itemsTable" class="space-y-2"></div>
-        <p class="text-xs text-gray-400 mt-1">* เพิ่มได้สูงสุด 10 รายการ</p>
       </div>
-      <div class="p-3 bg-red-50 rounded-lg border border-red-200 flex justify-between items-center">
-        <span class="text-gray-700 font-medium">💰 ราคารวมทั้งสิ้น</span>
-        <span id="totalDisplay" class="text-2xl font-extrabold text-red-600">0.00 บาท</span>
-      </div>
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">ชื่อผู้ขอซื้อ (แอดมิน) *</label>
-        <input type="text" id="adminName" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
-      </div>
-      <div class="mt-4 p-4 bg-orange-50 border-2 border-dashed border-orange-300 rounded-xl">
-        <label class="block text-orange-800 font-bold mb-2">🧾 แนบไฟล์ใบเสนอราคา (ถ้ามี)</label>
-        <input type="file" id="quoteUpload" accept="image/*,.pdf" class="w-full p-2 bg-white rounded-lg cursor-pointer" onchange="previewQuote(event)">
-        <p class="text-xs text-orange-600 mt-2">* แอดมินสามารถข้ามช่องนี้ได้</p>
-      </div>
-      <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-4 rounded-xl shadow-lg mt-8 text-lg transform active:scale-95 transition">🚀 ส่งขออนุมัติงบ (PR)</button>
-    </form>
+
+      <form id="prForm" class="p-6 md:p-8">
+        <input type="hidden" id="ticketId">
+
+        <!-- Ticket Info -->
+        <div id="ticketInfo" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+          <div class="flex items-center gap-2"><span class="animate-spin text-lg">⏳</span> กำลังโหลดข้อมูลการแจ้งซ่อม...</div>
+        </div>
+
+        <!-- 2-column grid for PC -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div>
+            <label class="label">🏢 แผนก *</label>
+            <select id="dept" required class="input-style">
+              <option value="สำนักงานส่วนกลาง">สำนักงานส่วนกลาง</option>
+              <option value="BU ก่อสร้าง">BU ก่อสร้าง</option>
+              <option value="BU ซื้อเพื่อจำหน่าย">BU ซื้อเพื่อจำหน่าย</option>
+              <option value="BU บอยเลอร์" selected>BU บอยเลอร์</option>
+              <option value="BU เซอร์วิส">BU เซอร์วิส</option>
+              <option value="BU ขนส่ง">BU ขนส่ง</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">📅 วันที่ต้องการสินค้า *</label>
+            <input type="date" id="reqDate" required class="input-style">
+          </div>
+          <div>
+            <label class="label">🏪 ชื่อร้านค้า / ผู้จำหน่าย *</label>
+            <input type="text" id="vendor" required class="input-style" placeholder="พิมพ์ชื่อร้านค้า">
+          </div>
+          <div>
+            <label class="label">👤 ชื่อผู้ขอซื้อ (แอดมิน) *</label>
+            <input type="text" id="adminName" required class="input-style">
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="mb-5">
+          <div class="flex justify-between items-center mb-3">
+            <label class="label mb-0">📦 รายการสั่งซื้อ/ซ่อม *</label>
+            <button type="button" onclick="addItemRow()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition active:scale-95 shadow">
+              + เพิ่มรายการ
+            </button>
+          </div>
+
+          <!-- Header row (PC only) -->
+          <div class="hidden md:grid grid-cols-12 gap-2 px-3 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wide">
+            <div class="col-span-1">#</div>
+            <div class="col-span-3">ชื่อรายการ</div>
+            <div class="col-span-2">วัตถุประสงค์</div>
+            <div class="col-span-1 text-center">จำนวน</div>
+            <div class="col-span-1 text-center">หน่วย</div>
+            <div class="col-span-2 text-right">ราคา (บาท)</div>
+            <div class="col-span-2"></div>
+          </div>
+
+          <div id="itemsTable" class="space-y-2"></div>
+          <p class="text-xs text-gray-400 mt-2">* เพิ่มได้สูงสุด 10 รายการ | วัตถุประสงค์สามารถเลือกต่างกันได้ในแต่ละรายการ</p>
+        </div>
+
+        <!-- Total -->
+        <div class="mb-5 p-4 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-orange-200 rounded-2xl flex justify-between items-center">
+          <div>
+            <div class="text-gray-500 text-sm">💰 ราคารวมทั้งสิ้น</div>
+            <div class="text-xs text-gray-400">คำนวณอัตโนมัติจากทุกรายการ</div>
+          </div>
+          <div id="totalDisplay" class="text-3xl font-extrabold text-red-600">0.00 ฿</div>
+        </div>
+
+        <!-- Quotation Upload -->
+        <div class="mb-6 p-5 bg-orange-50 border-2 border-dashed border-orange-300 rounded-2xl">
+          <label class="label text-orange-800">🧾 แนบไฟล์ใบเสนอราคา (ถ้ามี)</label>
+          <input type="file" id="quoteUpload" accept="image/*,.pdf" class="w-full p-2 bg-white rounded-xl cursor-pointer border border-orange-200" onchange="previewQuote(event)">
+          <p id="quoteFileName" class="text-xs text-orange-600 mt-2">* แอดมินสามารถข้ามช่องนี้ได้ หากฝ่ายจัดซื้อเป็นผู้หาใบเสนอราคา</p>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-4 px-4 rounded-2xl shadow-xl text-xl transform active:scale-95 transition duration-200">
+          🚀 ส่งขออนุมัติงบประมาณ (PR)
+        </button>
+      </form>
+    </div>
   </div>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
     let base64Quote = null;
 
+    const OBJ_OPTIONS = [
+      { value: 'เพื่อขาย/รอเบิกใช้', label: 'เพื่อขาย/รอเบิกใช้' },
+      { value: 'สินทรัพย์ถาวร',       label: 'สินทรัพย์ถาวร' },
+      { value: 'ต้นทุนสั่งงานบริการ', label: 'ต้นทุนสั่งงานบริการ' },
+      { value: 'ค่าใช้จ่ายอื่นๆ',    label: 'ค่าใช้จ่ายอื่นๆ' }
+    ];
+
     window.onload = () => {
       document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
       addItemRow();
       const ticketId = new URLSearchParams(window.location.search).get('ticketId');
-      if(ticketId) {
+      if (ticketId) {
         document.getElementById('ticketId').value = ticketId;
         fetch(GAS_URL + "?action=getTicketData&ticketId=" + ticketId)
           .then(r => r.json())
           .then(data => {
-            document.getElementById('ticketInfo').innerHTML = `<b>อ้างอิง:</b> ${ticketId} <br><b>ทะเบียนรถ:</b> ${data.plate||'-'}<br><b>อาการเบื้องต้น:</b> ${data.desc||data.part||''}`;
+            document.getElementById('ticketInfo').innerHTML = `
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">🔖</span>
+                <div>
+                  <div class="font-bold text-blue-900">${ticketId}</div>
+                  <div class="text-sm mt-1"><span class="font-semibold">ทะเบียนรถ:</span> ${data.plate||'-'} &nbsp;|&nbsp; <span class="font-semibold">อาการ:</span> ${data.desc||data.part||'-'}</div>
+                </div>
+              </div>`;
             const firstInput = document.querySelectorAll('.item-name')[0];
-            if(firstInput) firstInput.value = `ซ่อมแซม/เปลี่ยน ${data.part||''} (${data.desc||''})`;
-          }).catch(()=>{});
+            if (firstInput) firstInput.value = `ซ่อมแซม/เปลี่ยน ${data.part||''} (${data.desc||''})`;
+          }).catch(() => {});
       } else {
-        document.getElementById('ticketInfo').innerHTML = "<span class='text-red-500 font-bold'>❌ ไม่พบรหัสแจ้งซ่อม (โปรดเข้าผ่านลิงก์ในไลน์เท่านั้น)</span>";
+        document.getElementById('ticketInfo').innerHTML = "<span class='text-red-600 font-bold'>❌ ไม่พบรหัสแจ้งซ่อม (โปรดเข้าผ่านลิงก์ในไลน์เท่านั้น)</span>";
       }
     };
 
     function addItemRow() {
       const table = document.getElementById('itemsTable');
-      if(table.children.length >= 10) { alert('เพิ่มได้สูงสุด 10 รายการครับ'); return; }
+      if (table.children.length >= 10) { alert('เพิ่มได้สูงสุด 10 รายการครับ'); return; }
       const idx = table.children.length + 1;
+      const objOpts = OBJ_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
       const row = document.createElement('div');
-      row.className = 'flex gap-2 items-start bg-gray-50 p-2 rounded-lg border border-gray-200';
+      row.className = 'item-row';
       row.innerHTML = `
-        <span class="mt-3 text-gray-400 text-sm font-bold w-4 shrink-0">${idx}</span>
-        <div class="flex-1 min-w-0">
-          <input type="text" class="item-name w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" placeholder="ชื่อรายการ/อะไหล่" oninput="calcTotal()">
-        </div>
-        <div class="w-16 shrink-0">
-          <input type="number" class="item-qty w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-center" placeholder="จำนวน" value="1" min="1">
-        </div>
-        <div class="w-16 shrink-0">
-          <input type="text" class="item-unit w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-center" placeholder="หน่วย">
-        </div>
-        <div class="w-24 shrink-0">
-          <input type="number" class="item-price w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-right" placeholder="ราคา" min="0" oninput="calcTotal()">
-        </div>
-        <button type="button" onclick="removeRow(this)" class="mt-1.5 text-red-400 hover:text-red-600 text-lg font-bold shrink-0 transition">✕</button>
-      `;
+        <div class="flex gap-2 items-center flex-wrap md:flex-nowrap">
+          <span class="text-amber-500 font-bold text-sm w-5 shrink-0">${idx}</span>
+          <input type="text" class="item-name input-style flex-1 min-w-0" placeholder="ชื่อรายการ / อะไหล่" oninput="calcTotal()">
+          <select class="item-obj obj-select shrink-0" style="min-width:130px">
+            ${objOpts}
+          </select>
+          <input type="number" class="item-qty input-style shrink-0" style="width:70px" placeholder="จำนวน" value="1" min="1">
+          <input type="text" class="item-unit input-style shrink-0" style="width:70px" placeholder="หน่วย">
+          <input type="number" class="item-price input-style shrink-0 text-right" style="width:110px" placeholder="ราคา" min="0" oninput="calcTotal()">
+          <button type="button" onclick="removeRow(this)" class="shrink-0 w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition font-bold text-lg">✕</button>
+        </div>`;
       table.appendChild(row);
     }
 
     function removeRow(btn) {
       const table = document.getElementById('itemsTable');
-      if(table.children.length <= 1) return;
-      btn.parentElement.remove();
-      [...table.children].forEach((row, i) => { row.querySelector('span').textContent = i+1; });
+      if (table.children.length <= 1) return;
+      btn.closest('.item-row').remove();
+      [...table.children].forEach((row, i) => { row.querySelector('span').textContent = i + 1; });
       calcTotal();
     }
 
     function calcTotal() {
       let total = 0;
-      document.querySelectorAll('.item-price').forEach(inp => { total += parseFloat(inp.value)||0; });
-      document.getElementById('totalDisplay').textContent = total.toLocaleString('th-TH', {minimumFractionDigits:2}) + ' บาท';
+      document.querySelectorAll('.item-price').forEach(inp => { total += parseFloat(inp.value) || 0; });
+      document.getElementById('totalDisplay').textContent = total.toLocaleString('th-TH', { minimumFractionDigits: 2 }) + ' ฿';
     }
 
     function previewQuote(event) {
       const file = event.target.files[0];
-      if(!file) return;
+      if (!file) return;
+      document.getElementById('quoteFileName').textContent = '✅ เลือกไฟล์: ' + file.name;
       const reader = new FileReader();
       reader.onload = e => { base64Quote = e.target.result; };
       reader.readAsDataURL(file);
@@ -142,39 +199,38 @@
     document.getElementById('prForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const itemRows = [];
-      document.querySelectorAll('#itemsTable > div').forEach(row => {
+      document.querySelectorAll('#itemsTable .item-row').forEach(row => {
         const item  = row.querySelector('.item-name')?.value.trim();
+        const obj   = row.querySelector('.item-obj')?.value;
         const qty   = row.querySelector('.item-qty')?.value.trim();
         const unit  = row.querySelector('.item-unit')?.value.trim();
         const price = row.querySelector('.item-price')?.value.trim();
-        if(item) itemRows.push({ item, qty, unit, price });
+        if (item) itemRows.push({ item, objective: obj, qty, unit, price });
       });
-      if(itemRows.length === 0) { alert('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการครับ'); return; }
+      if (itemRows.length === 0) { alert('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการครับ'); return; }
       const rawDate = document.getElementById('reqDate').value;
-      const [y,m,d] = rawDate.split('-');
+      const [y, m, d] = rawDate.split('-');
       const prData = {
         ticketId:  document.getElementById('ticketId').value,
         dept:      document.getElementById('dept').value,
-        objective: document.getElementById('objective').value,
         reqDate:   `${d}/${m}/${y}`,
         vendor:    document.getElementById('vendor').value,
         items:     itemRows,
         adminName: document.getElementById('adminName').value,
         quotationImage: base64Quote
       };
-      Swal.fire({ title: 'กำลังบันทึก...', html: 'กำลังสร้างไฟล์ PDF และส่งข้อมูลเข้าไลน์<br><i>(อาจใช้เวลา 5-10 วินาที)</i>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitPR', prData: prData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }})
-      .then(r => r.json())
-      .then(data => {
-        if(data.success) {
-          Swal.fire('สำเร็จ!', 'ส่งใบ PR ให้ผู้บริหารพิจารณาแล้วครับ', 'success').then(() => { document.getElementById('prForm').reset(); document.getElementById('itemsTable').innerHTML=''; addItemRow(); });
-        } else {
-          Swal.fire('ผิดพลาด', data.error || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ', 'error');
-        }
-      })
-      .catch(err => {
-        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้ครับ: ' + err.message, 'error');
-      });
+      Swal.fire({ title: 'กำลังสร้างใบ PR...', html: 'กำลังสร้างไฟล์ PDF และส่งข้อมูลเข้าไลน์<br><i>(อาจใช้เวลา 10-20 วินาที)</i>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitPR', prData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire('สำเร็จ! 🎉', `ส่งใบ PR <b>${data.prId}</b> ให้ผู้บริหารพิจารณาแล้วครับ`, 'success')
+              .then(() => { document.getElementById('prForm').reset(); document.getElementById('itemsTable').innerHTML = ''; addItemRow(); base64Quote = null; document.getElementById('quoteFileName').textContent = ''; });
+          } else {
+            Swal.fire('ผิดพลาด', data.error || 'เกิดข้อผิดพลาด', 'error');
+          }
+        })
+        .catch(err => Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้: ' + err.message, 'error'));
     });
   </script>
 </body>
