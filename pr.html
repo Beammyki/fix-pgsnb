@@ -45,29 +45,31 @@
       </div>
 
       <div>
+        <label class="block text-gray-700 font-medium mb-1">📅 วันที่ต้องการสินค้า *</label>
+        <input type="date" id="reqDate" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
+      </div>
+
+      <div>
         <label class="block text-gray-700 font-medium mb-1">ชื่อร้านค้า (ผู้จำหน่ายที่แนะนำ) *</label>
         <input type="text" id="vendor" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="พิมพ์ชื่อร้านค้า">
       </div>
       
+      <!-- ตารางรายการสินค้า -->
       <div>
-        <label class="block text-gray-700 font-medium mb-1">รายการสั่งซื้อ/ซ่อม (แก้ไขให้ชัดเจนได้) *</label>
-        <textarea id="items" rows="2" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="เช่น เปลี่ยนยางหน้าซ้าย 1 เส้น"></textarea>
+        <div class="flex justify-between items-center mb-2">
+          <label class="text-gray-700 font-medium">รายการสั่งซื้อ/ซ่อม *</label>
+          <button type="button" onclick="addItemRow()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg transition active:scale-95">
+            + เพิ่มรายการ
+          </button>
+        </div>
+        <div id="itemsTable" class="space-y-2"></div>
+        <p class="text-xs text-gray-400 mt-1">* เพิ่มได้สูงสุด 10 รายการ ตามจำนวนแถวในแบบฟอร์ม PR</p>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-gray-700 font-medium mb-1">จำนวน *</label>
-          <input type="number" id="qty" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" value="1">
-        </div>
-        <div>
-          <label class="block text-gray-700 font-medium mb-1">หน่วย *</label>
-          <input type="text" id="unit" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="เช่น เส้น, ชิ้น">
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-gray-700 font-medium mb-1">ยอดรวมราคาประเมิน (บาท) *</label>
-        <input type="number" id="price" required class="w-full px-4 py-3 rounded-lg border border-gray-300 text-xl font-bold text-red-600 focus:ring-2 focus:ring-amber-500" placeholder="0.00">
+      <!-- ราคารวมอัตโนมัติ -->
+      <div class="p-3 bg-red-50 rounded-lg border border-red-200 flex justify-between items-center">
+        <span class="text-gray-700 font-medium">💰 ราคารวมทั้งสิ้น</span>
+        <span id="totalDisplay" class="text-2xl font-extrabold text-red-600">0.00 บาท</span>
       </div>
 
       <div>
@@ -89,11 +91,17 @@
 
   <script>
     // 👇 แก้ไข URL เป็นของ Google Apps Script ของคุณ 👇
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
+    const GAS_URL = "https://script.google.com/macros/s/ใส่ลิงก์ของคุณที่นี่/exec";
     
     let base64Quote = null;
+    let firstItemDesc = '';
 
+    // ตั้งค่าวันที่เริ่มต้น = วันนี้
     window.onload = () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('reqDate').value = today;
+      addItemRow(); // เพิ่มแถวแรกให้อัตโนมัติ
+
       const ticketId = new URLSearchParams(window.location.search).get('ticketId');
       if(ticketId) {
         document.getElementById('ticketId').value = ticketId;
@@ -101,12 +109,57 @@
           .then(r => r.json())
           .then(data => {
             document.getElementById('ticketInfo').innerHTML = `<b>อ้างอิง:</b> ${ticketId} <br><b>ทะเบียนรถ:</b> ${data.plate||'-'}<br><b>อาการเบื้องต้น:</b> ${data.desc||data.part||''}`;
-            document.getElementById('items').value = `ซ่อมแซม/เปลี่ยน ${data.part||''} (${data.desc||''})`;
+            // ใส่ข้อมูลในแถวแรกอัตโนมัติ
+            firstItemDesc = `ซ่อมแซม/เปลี่ยน ${data.part||''} (${data.desc||''})`;
+            document.querySelector('.item-name')?.setAttribute('value', firstItemDesc);
+            const firstNameInput = document.querySelectorAll('.item-name')[0];
+            if(firstNameInput) firstNameInput.value = firstItemDesc;
           });
       } else {
         document.getElementById('ticketInfo').innerHTML = "<span class='text-red-500 font-bold'>❌ ไม่พบรหัสแจ้งซ่อม (โปรดเข้าผ่านลิงก์ในไลน์เท่านั้น)</span>";
       }
     };
+
+    // ฟังก์ชันเพิ่มแถวรายการสินค้า
+    function addItemRow() {
+      const table = document.getElementById('itemsTable');
+      if(table.children.length >= 10) { alert('เพิ่มได้สูงสุด 10 รายการครับ'); return; }
+      const idx = table.children.length + 1;
+      const row = document.createElement('div');
+      row.className = 'flex gap-2 items-start bg-gray-50 p-2 rounded-lg border border-gray-200';
+      row.innerHTML = `
+        <span class="mt-3 text-gray-400 text-sm font-bold w-4 shrink-0">${idx}</span>
+        <div class="flex-1 min-w-0">
+          <input type="text" class="item-name w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-amber-400" placeholder="ชื่อรายการ/อะไหล่" oninput="calcTotal()" required>
+        </div>
+        <div class="w-16 shrink-0">
+          <input type="number" class="item-qty w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-center focus:ring-2 focus:ring-amber-400" placeholder="จำนวน" value="1" min="1" oninput="calcTotal()" required>
+        </div>
+        <div class="w-16 shrink-0">
+          <input type="text" class="item-unit w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-center focus:ring-2 focus:ring-amber-400" placeholder="หน่วย" required>
+        </div>
+        <div class="w-24 shrink-0">
+          <input type="number" class="item-price w-full px-2 py-2 rounded-lg border border-gray-300 text-sm text-right focus:ring-2 focus:ring-amber-400" placeholder="ราคา" min="0" oninput="calcTotal()" required>
+        </div>
+        <button type="button" onclick="removeRow(this)" class="mt-1.5 text-red-400 hover:text-red-600 text-lg font-bold shrink-0 transition">✕</button>
+      `;
+      table.appendChild(row);
+    }
+
+    function removeRow(btn) {
+      const table = document.getElementById('itemsTable');
+      if(table.children.length <= 1) return; // เก็บอย่างน้อย 1 แถว
+      btn.parentElement.remove();
+      // อัปเดตเลขลำดับ
+      [...table.children].forEach((row, i) => { row.querySelector('span').textContent = i+1; });
+      calcTotal();
+    }
+
+    function calcTotal() {
+      let total = 0;
+      document.querySelectorAll('.item-price').forEach(inp => { total += parseFloat(inp.value)||0; });
+      document.getElementById('totalDisplay').textContent = total.toLocaleString('th-TH', {minimumFractionDigits:2}) + ' บาท';
+    }
 
     function previewQuote(event) {
       const file = event.target.files[0];
@@ -118,17 +171,32 @@
 
     document.getElementById('prForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      
+
+      // รวบรวมข้อมูลแต่ละแถวของสินค้า
+      const itemRows = [];
+      document.querySelectorAll('#itemsTable > div').forEach(row => {
+        const item  = row.querySelector('.item-name')?.value.trim();
+        const qty   = row.querySelector('.item-qty')?.value.trim();
+        const unit  = row.querySelector('.item-unit')?.value.trim();
+        const price = row.querySelector('.item-price')?.value.trim();
+        if(item) itemRows.push({ item, qty, unit, price });
+      });
+
+      if(itemRows.length === 0) { alert('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการครับ'); return; }
+
+      // แปลงวันที่เป็นรูปแบบ dd/MM/yyyy
+      const rawDate = document.getElementById('reqDate').value;
+      const [y,m,d] = rawDate.split('-');
+      const reqDateTH = `${d}/${m}/${y}`;
+
       const prData = {
-        ticketId: document.getElementById('ticketId').value,
-        dept: document.getElementById('dept').value,
-        objective: document.getElementById('objective').value,
-        vendor: document.getElementById('vendor').value,
-        items: document.getElementById('items').value,
-        qty: document.getElementById('qty').value,
-        unit: document.getElementById('unit').value,
-        price: document.getElementById('price').value,
-        adminName: document.getElementById('adminName').value,
+        ticketId:   document.getElementById('ticketId').value,
+        dept:       document.getElementById('dept').value,
+        objective:  document.getElementById('objective').value,
+        reqDate:    reqDateTH,
+        vendor:     document.getElementById('vendor').value,
+        items:      itemRows,
+        adminName:  document.getElementById('adminName').value,
         quotationImage: base64Quote
       };
       
@@ -138,7 +206,7 @@
       .then(r=>r.json())
       .then(data => {
          if(data.success) {
-           Swal.fire('สำเร็จ!', 'ส่งใบ PR และใบเสนอราคา ให้ผู้บริหารพิจารณาแล้ว', 'success').then(() => document.getElementById('prForm').reset());
+           Swal.fire('สำเร็จ!', 'ส่งใบ PR และใบเสนอราคา ให้ผู้บริหารพิจารณาแล้ว', 'success').then(() => { document.getElementById('prForm').reset(); document.getElementById('itemsTable').innerHTML=''; addItemRow(); });
          } else {
            Swal.fire('ผิดพลาด', data.error, 'error');
          }
