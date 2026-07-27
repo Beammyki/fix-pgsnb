@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มสร้างใบ PR (สำหรับแอดมิน)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style> @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap'); body { font-family: 'Kanit', sans-serif; background-color: #f3f4f6; } </style>
+</head>
+<body class="min-h-screen p-4 pb-12">
+  <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mt-4">
+    <div class="bg-amber-500 p-6 text-white text-center">
+      <h1 class="text-2xl font-bold">📝 เปิดใบขออนุมัติซื้อ (PR)</h1>
+      <p class="text-amber-100 text-sm mt-1">กรอกรายละเอียดเพื่อส่งขออนุมัติงบและแปลงเป็น PDF</p>
+    </div>
+    
+    <form id="prForm" class="p-6 space-y-4">
+      <input type="hidden" id="ticketId">
+      
+      <div class="p-3 bg-gray-100 rounded-lg text-sm text-gray-600 border border-gray-200" id="ticketInfo">
+        (กำลังโหลดข้อมูลการแจ้งซ่อม...)
+      </div>
+      
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">แผนก *</label>
+        <select id="dept" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
+          <option value="BU บอยเลอร์">BU บอยเลอร์</option>
+          <option value="BU ขนส่ง">BU ขนส่ง</option>
+          <option value="BU ก่อสร้าง">BU ก่อสร้าง</option>
+          <option value="BU เซอร์วิส">BU เซอร์วิส</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">ชื่อร้านค้า (ผู้จำหน่ายที่แนะนำ) *</label>
+        <input type="text" id="vendor" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="พิมพ์ชื่อร้านค้า">
+      </div>
+      
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">รายการสั่งซื้อ/ซ่อม (แก้ไขให้ชัดเจนได้) *</label>
+        <textarea id="items" rows="2" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="เช่น เปลี่ยนยางหน้าซ้าย 1 เส้น"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">จำนวน *</label>
+          <input type="number" id="qty" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" value="1">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">หน่วย *</label>
+          <input type="text" id="unit" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500" placeholder="เช่น เส้น, ชิ้น">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">ยอดรวมราคาประเมิน (บาท) *</label>
+        <input type="number" id="price" required class="w-full px-4 py-3 rounded-lg border border-gray-300 text-xl font-bold text-red-600 focus:ring-2 focus:ring-amber-500" placeholder="0.00">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">ชื่อผู้ขอซื้อ (แอดมิน) *</label>
+        <input type="text" id="adminName" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500">
+      </div>
+
+      <div class="mt-4 p-4 bg-orange-50 border-2 border-dashed border-orange-300 rounded-xl">
+        <label class="block text-orange-800 font-bold mb-2">🧾 แนบไฟล์ใบเสนอราคา (ถ้ามี)</label>
+        <input type="file" id="quoteUpload" accept="image/*,.pdf" class="w-full p-2 bg-white rounded-lg cursor-pointer" onchange="previewQuote(event)">
+        <p class="text-xs text-orange-600 mt-2">* แอดมินสามารถข้ามช่องนี้ได้ หากฝ่ายจัดซื้อเป็นผู้หาใบเสนอราคา</p>
+      </div>
+
+      <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-4 rounded-xl shadow-lg mt-8 text-lg transform active:scale-95 transition">
+        🚀 ส่งขออนุมัติงบ (PR)
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // 👇 แก้ไข URL เป็นของ Google Apps Script ของคุณ 👇
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
+    
+    let base64Quote = null;
+
+    window.onload = () => {
+      const ticketId = new URLSearchParams(window.location.search).get('ticketId');
+      if(ticketId) {
+        document.getElementById('ticketId').value = ticketId;
+        fetch(GAS_URL + "?action=getTicketData&ticketId=" + ticketId)
+          .then(r => r.json())
+          .then(data => {
+            document.getElementById('ticketInfo').innerHTML = `<b>อ้างอิง:</b> ${ticketId} <br><b>ทะเบียนรถ:</b> ${data.plate||'-'}<br><b>อาการเบื้องต้น:</b> ${data.desc||data.part||''}`;
+            document.getElementById('items').value = `ซ่อมแซม/เปลี่ยน ${data.part||''} (${data.desc||''})`;
+          });
+      } else {
+        document.getElementById('ticketInfo').innerHTML = "<span class='text-red-500 font-bold'>❌ ไม่พบรหัสแจ้งซ่อม (โปรดเข้าผ่านลิงก์ในไลน์เท่านั้น)</span>";
+      }
+    };
+
+    function previewQuote(event) {
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { base64Quote = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    document.getElementById('prForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const prData = {
+        ticketId: document.getElementById('ticketId').value,
+        dept: document.getElementById('dept').value,
+        vendor: document.getElementById('vendor').value,
+        items: document.getElementById('items').value,
+        qty: document.getElementById('qty').value,
+        unit: document.getElementById('unit').value,
+        price: document.getElementById('price').value,
+        adminName: document.getElementById('adminName').value,
+        quotationImage: base64Quote
+      };
+      
+      Swal.fire({ title: 'กำลังบันทึก...', html: 'กำลังสร้างไฟล์ PDF และส่งข้อมูลเข้าไลน์<br><i>(อาจใช้เวลา 5-10 วินาที)</i>', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitPR', prData: prData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' }})
+      .then(r=>r.json())
+      .then(data => {
+         if(data.success) {
+           Swal.fire('สำเร็จ!', 'ส่งใบ PR และใบเสนอราคา ให้ผู้บริหารพิจารณาแล้ว', 'success').then(() => document.getElementById('prForm').reset());
+         } else {
+           Swal.fire('ผิดพลาด', data.error, 'error');
+         }
+      });
+    });
+  </script>
+</body>
+</html>
