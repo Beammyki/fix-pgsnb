@@ -3,128 +3,268 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard สรุปงบประมาณ PR</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Dashboard | ระบบ PR PEGASUS</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style> @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap'); body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; } </style>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Kanit',sans-serif;}
+    body{background:#0f172a;color:#e2e8f0;min-height:100vh;}
+    .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;}
+    .card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px;transition:transform .2s,box-shadow .2s;}
+    .card:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+    .gradient-text{background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .stat-number{font-size:3rem;font-weight:700;line-height:1;}
+    select{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:#e2e8f0;padding:10px 16px;font-family:'Kanit',sans-serif;font-size:14px;cursor:pointer;outline:none;transition:border-color .2s;}
+    select:focus{border-color:#fbbf24;}
+    select option{background:#1e293b;color:#e2e8f0;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;}
+    .badge-green{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3);}
+    .badge-red{background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+    .badge-yellow{background:rgba(245,158,11,.2);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
+    .table-row{border-bottom:1px solid rgba(255,255,255,0.06);transition:background .15s;}
+    .table-row:hover{background:rgba(255,255,255,0.05);}
+    .pulse{animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+    .bar-fill{transition:width 1s ease;}
+    ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#1e293b;} ::-webkit-scrollbar-thumb{background:#475569;border-radius:3px;}
+  </style>
 </head>
-<body class="p-4 md:p-8">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm">
-      <h1 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">📊 Dashboard สรุปงบประมาณ PR</h1>
-      <div class="flex space-x-3 w-full md:w-auto">
-        <select id="monthFilter" class="w-full md:w-48 px-4 py-3 border border-gray-300 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500" onchange="filterData()">
-          <option value="all">📅 ดูทุกเดือน</option>
-          <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
-          <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
-          <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
-          <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
-        </select>
-        <select id="yearFilter" class="w-full md:w-32 px-4 py-3 border border-gray-300 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-blue-500" onchange="filterData()">
-          <option value="all">ทุกปี</option>
-          <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
-        </select>
+<body>
+
+<!-- Header -->
+<div style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-bottom:1px solid rgba(255,255,255,0.08);padding:20px 32px;">
+  <div style="max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">📊</div>
+        <div>
+          <div class="gradient-text" style="font-size:22px;font-weight:700;">PEGASUS PR Dashboard</div>
+          <div style="font-size:12px;color:#64748b;">ระบบติดตามใบขออนุมัติซื้อแบบเรียลไทม์</div>
+        </div>
       </div>
     </div>
-
-    <!-- สรุปตัวเลข (Cards) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white p-6 rounded-3xl shadow-md border-b-4 border-blue-500 transform hover:-translate-y-1 transition">
-        <div class="text-gray-500 text-sm font-semibold tracking-wide">ใบ PR ที่เปิดทั้งหมด (เคส)</div>
-        <div class="text-5xl font-extrabold text-gray-800 mt-3" id="totalCases">0</div>
-      </div>
-      <div class="bg-white p-6 rounded-3xl shadow-md border-b-4 border-green-500 transform hover:-translate-y-1 transition">
-        <div class="text-gray-500 text-sm font-semibold tracking-wide">✅ อนุมัติงบแล้ว (เคส)</div>
-        <div class="text-5xl font-extrabold text-green-500 mt-3" id="approvedCases">0</div>
-      </div>
-      <div class="bg-white p-6 rounded-3xl shadow-md border-b-4 border-red-500 transform hover:-translate-y-1 transition bg-gradient-to-br from-white to-red-50">
-        <div class="text-gray-500 text-sm font-semibold tracking-wide">💰 รวมงบประมาณ (บาท)</div>
-        <div class="text-5xl font-extrabold text-red-600 mt-3" id="totalCost">0 ฿</div>
-      </div>
-    </div>
-
-    <!-- กราฟ (Chart) -->
-    <div class="bg-white p-6 rounded-3xl shadow-md">
-      <h2 class="text-xl font-bold text-gray-700 mb-6 flex items-center">
-        <span class="mr-2">🏢</span> งบประมาณแยกตามแผนก (เฉพาะที่อนุมัติแล้ว)
-      </h2>
-      <div class="relative h-72 w-full">
-        <canvas id="deptChart"></canvas>
-      </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <select id="monthFilter" onchange="filterData()">
+        <option value="all">📅 ทุกเดือน</option>
+        <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
+        <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
+        <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
+        <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+      </select>
+      <select id="yearFilter" onchange="filterData()">
+        <option value="all">ทุกปี</option>
+        <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+      </select>
+      <button onclick="loadData()" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:10px 18px;border-radius:12px;cursor:pointer;font-family:'Kanit',sans-serif;font-size:14px;transition:background .2s;">🔄 รีเฟรช</button>
     </div>
   </div>
+</div>
 
-  <script>
-    // 👇 แก้ไข URL เป็นของ Google Apps Script ของคุณ 👇
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
-    
-    let allData = [];
-    let chartInstance = null;
+<div style="max-width:1400px;margin:0 auto;padding:28px 20px;">
 
-    // โหลดข้อมูล Real-time เมื่อเปิดหน้าเว็บ
+  <!-- Loading -->
+  <div id="loadingState" style="text-align:center;padding:80px 0;">
+    <div class="pulse" style="font-size:48px;margin-bottom:16px;">⚡</div>
+    <div style="color:#64748b;font-size:16px;">กำลังโหลดข้อมูลจากระบบ...</div>
+  </div>
+
+  <div id="mainContent" style="display:none;">
+
+    <!-- KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+      <div class="card" style="border-top:3px solid #3b82f6;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">📋</div>
+        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">ใบ PR ทั้งหมด</div>
+        <div class="stat-number" id="totalCases" style="color:#93c5fd;margin:8px 0;">0</div>
+        <div style="font-size:12px;color:#475569;">เอกสารที่เปิดในช่วงที่เลือก</div>
+      </div>
+      <div class="card" style="border-top:3px solid #10b981;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">✅</div>
+        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">อนุมัติแล้ว</div>
+        <div class="stat-number" id="approvedCases" style="color:#34d399;margin:8px 0;">0</div>
+        <div style="font-size:12px;color:#475569;">ผ่านการอนุมัติงบประมาณ</div>
+      </div>
+      <div class="card" style="border-top:3px solid #f59e0b;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">⏳</div>
+        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">รอดำเนินการ</div>
+        <div class="stat-number" id="pendingCases" style="color:#fbbf24;margin:8px 0;">0</div>
+        <div style="font-size:12px;color:#475569;">ยังรอการอนุมัติ</div>
+      </div>
+      <div class="card" style="border-top:3px solid #ef4444;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">💰</div>
+        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">งบที่ใช้ไป (อนุมัติแล้ว)</div>
+        <div class="stat-number" id="totalCost" style="color:#f87171;margin:8px 0;font-size:2rem;">0 ฿</div>
+        <div style="font-size:12px;color:#475569;">ยอดรวมที่ผ่านการอนุมัติ</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;" class="charts-grid">
+      <div class="card" style="min-height:280px;">
+        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">🏢 งบแยกตามแผนก (เฉพาะอนุมัติแล้ว)</h2>
+        <div style="position:relative;height:220px;"><canvas id="deptChart"></canvas></div>
+      </div>
+      <div class="card" style="min-height:280px;">
+        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">🔵 สัดส่วนสถานะใบ PR</h2>
+        <div style="position:relative;height:220px;display:flex;align-items:center;justify-content:center;">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Department Budget Bars -->
+    <div class="card" style="margin-bottom:24px;">
+      <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">📊 งบประมาณแต่ละแผนก (เทียบสัดส่วน)</h2>
+      <div id="deptBars" style="space-y:12px;"></div>
+    </div>
+
+    <!-- Recent Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;">🕐 รายการล่าสุด</h2>
+        <div id="recordCount" style="font-size:12px;color:#64748b;"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">รหัส PR</th>
+              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">วันที่</th>
+              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">แผนก</th>
+              <th style="text-align:right;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">ราคา</th>
+              <th style="text-align:center;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="recentTable"></tbody>
+        </table>
+        <div id="emptyState" style="text-align:center;padding:40px;color:#475569;display:none;">
+          <div style="font-size:40px;margin-bottom:8px;">📭</div>
+          <div>ไม่มีข้อมูลในช่วงที่เลือก</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
+  let allData = [], deptChart, statusChart;
+
+  const DEPT_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316'];
+
+  function loadData() {
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
     fetch(GAS_URL + "?action=getDashboardData")
-      .then(res => res.json())
-      .then(data => { allData = data; filterData(); })
-      .catch(err => console.error("Error loading data:", err));
+      .then(r => r.json())
+      .then(data => { allData = data; filterData(); document.getElementById('loadingState').style.display = 'none'; document.getElementById('mainContent').style.display = 'block'; })
+      .catch(() => { document.getElementById('loadingState').innerHTML = '<div style="font-size:40px">⚠️</div><div style="color:#f87171;margin-top:8px;">โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ GAS_URL</div>'; });
+  }
 
-    function filterData() {
-      const month = document.getElementById('monthFilter').value;
-      const year = document.getElementById('yearFilter').value;
-      
-      let filtered = allData.filter(item => {
-        const d = new Date(item.date);
-        const matchMonth = (month === 'all') ? true : (d.getMonth() + 1).toString() === month;
-        const matchYear = (year === 'all') ? true : d.getFullYear().toString() === year;
-        return matchMonth && matchYear;
-      });
+  function animateNumber(el, target, prefix='', suffix='') {
+    let start = 0, duration = 800, step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      el.textContent = prefix + Math.floor(start).toLocaleString('th-TH') + suffix;
+      if (start >= target) clearInterval(timer);
+    }, 16);
+  }
 
-      let totalCases = filtered.length;
-      let approved = filtered.filter(i => i.status.includes('อนุมัติ')).length;
-      let cost = filtered.filter(i => i.status.includes('อนุมัติ')).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
-      
-      // Animate ตัวเลข
-      document.getElementById('totalCases').innerText = totalCases;
-      document.getElementById('approvedCases').innerText = approved;
-      document.getElementById('totalCost').innerText = cost.toLocaleString() + " ฿";
+  function filterData() {
+    const month = document.getElementById('monthFilter').value;
+    const year = document.getElementById('yearFilter').value;
+    let filtered = allData.filter(item => {
+      const d = new Date(item.date);
+      return (month === 'all' || (d.getMonth()+1).toString() === month) &&
+             (year === 'all' || d.getFullYear().toString() === year);
+    });
 
-      // คำนวณกราฟ (เอาเฉพาะที่อนุมัติแล้วมาสรุป)
-      let deptSums = {};
-      filtered.filter(i => i.status.includes('อนุมัติ')).forEach(i => {
-        deptSums[i.dept] = (deptSums[i.dept] || 0) + (Number(i.price) || 0);
-      });
-      
-      drawChart(Object.keys(deptSums), Object.values(deptSums));
-    }
+    const approved = filtered.filter(i => i.status && i.status.includes('อนุมัติงบ'));
+    const pending  = filtered.filter(i => i.status && !i.status.includes('อนุมัติงบ') && !i.status.includes('ไม่อนุมัติ'));
+    const cost = approved.reduce((s, i) => s + (Number(i.price)||0), 0);
 
-    function drawChart(labels, data) {
-      const ctx = document.getElementById('deptChart').getContext('2d');
-      if(chartInstance) chartInstance.destroy();
-      
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'ยอดอนุมัติงบ (บาท)',
-            data: data,
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-            hoverBackgroundColor: 'rgba(37, 99, 235, 1)',
-            borderRadius: 8,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, grid: { borderDash: [5, 5] }, ticks: { callback: function(value) { return value.toLocaleString() + ' ฿'; } } },
-            x: { grid: { display: false } }
-          },
-          animation: { duration: 1000, easing: 'easeOutQuart' }
-        }
-      });
-    }
-  </script>
+    animateNumber(document.getElementById('totalCases'), filtered.length);
+    animateNumber(document.getElementById('approvedCases'), approved.length);
+    animateNumber(document.getElementById('pendingCases'), pending.length);
+    animateNumber(document.getElementById('totalCost'), cost, '', ' ฿');
+
+    // Dept chart
+    const deptSums = {};
+    approved.forEach(i => { deptSums[i.dept] = (deptSums[i.dept]||0) + (Number(i.price)||0); });
+    drawDeptChart(Object.keys(deptSums), Object.values(deptSums));
+    drawDeptBars(deptSums, cost);
+
+    // Status chart
+    const rejected = filtered.filter(i => i.status && i.status.includes('ไม่อนุมัติ'));
+    drawStatusChart(approved.length, pending.length, rejected.length);
+
+    // Table
+    const tbody = document.getElementById('recentTable');
+    const sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
+    document.getElementById('recordCount').textContent = `แสดง ${sorted.length} / ${filtered.length} รายการ`;
+    tbody.innerHTML = sorted.map(item => {
+      const d = new Date(item.date);
+      const dateStr = isNaN(d) ? '-' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
+      const isApproved = item.status?.includes('อนุมัติงบ');
+      const isPending  = !item.status?.includes('อนุมัติ') && !item.status?.includes('ไม่อนุมัติ');
+      const badge = isApproved ? '<span class="badge badge-green">✅ อนุมัติแล้ว</span>'
+                  : isPending  ? '<span class="badge badge-yellow">⏳ รอดำเนินการ</span>'
+                  : '<span class="badge badge-red">❌ ไม่อนุมัติ</span>';
+      return `<tr class="table-row">
+        <td style="padding:12px;font-size:13px;color:#93c5fd;font-weight:600;">${item.prId||'-'}</td>
+        <td style="padding:12px;font-size:13px;color:#94a3b8;">${dateStr}</td>
+        <td style="padding:12px;font-size:13px;color:#e2e8f0;">${item.dept||'-'}</td>
+        <td style="padding:12px;font-size:13px;color:#fbbf24;text-align:right;font-weight:600;">${Number(item.price).toLocaleString('th-TH')} ฿</td>
+        <td style="padding:12px;text-align:center;">${badge}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('emptyState').style.display = sorted.length === 0 ? 'block' : 'none';
+  }
+
+  function drawDeptChart(labels, data) {
+    const ctx = document.getElementById('deptChart').getContext('2d');
+    if (deptChart) deptChart.destroy();
+    deptChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i) => DEPT_COLORS[i % DEPT_COLORS.length] + 'cc'), borderRadius: 8, borderWidth: 0 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+        scales: { y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b',callback:v=>v.toLocaleString()+'฿'}}, x:{grid:{display:false},ticks:{color:'#64748b'}} },
+        animation:{duration:1000,easing:'easeOutQuart'} }
+    });
+  }
+
+  function drawStatusChart(approved, pending, rejected) {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels:['อนุมัติแล้ว','รอดำเนินการ','ไม่อนุมัติ'], datasets:[{data:[approved,pending,rejected],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderWidth:0,hoverOffset:8}] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
+        plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Kanit',size:12},padding:12}}},
+        animation:{duration:1000} }
+    });
+  }
+
+  function drawDeptBars(deptSums, total) {
+    const container = document.getElementById('deptBars');
+    const entries = Object.entries(deptSums).sort((a,b) => b[1]-a[1]);
+    container.innerHTML = entries.map(([dept, sum], i) => {
+      const pct = total > 0 ? (sum/total*100).toFixed(1) : 0;
+      const color = DEPT_COLORS[i % DEPT_COLORS.length];
+      return `<div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
+          <span style="color:#e2e8f0;">${dept}</span>
+          <span style="color:${color};font-weight:600;">${Number(sum).toLocaleString('th-TH')} ฿ <span style="color:#64748b;font-weight:400;">(${pct}%)</span></span>
+        </div>
+        <div style="background:rgba(255,255,255,0.07);border-radius:100px;height:8px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:100px;transition:width 1s ease;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  loadData();
+</script>
 </body>
 </html>
