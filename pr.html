@@ -21,7 +21,7 @@
   </style>
 </head>
 <body class="p-4 py-8">
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-5xl mx-auto">
     <!-- Header -->
     <div class="card rounded-2xl shadow-2xl overflow-hidden">
       <div class="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white text-center relative overflow-hidden">
@@ -78,14 +78,16 @@
           </div>
 
           <!-- Header row (PC only) -->
-          <div class="hidden md:grid grid-cols-12 gap-2 px-3 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wide">
-            <div class="col-span-1">#</div>
-            <div class="col-span-3">ชื่อรายการ</div>
-            <div class="col-span-2">วัตถุประสงค์</div>
-            <div class="col-span-1 text-center">จำนวน</div>
-            <div class="col-span-1 text-center">หน่วย</div>
-            <div class="col-span-2 text-right">ราคา (บาท)</div>
-            <div class="col-span-2"></div>
+          <div class="hidden md:flex gap-2 px-3 mb-1 text-xs font-bold text-gray-400 uppercase tracking-wide">
+            <div style="width:20px">#</div>
+            <div style="width:100px">รหัสต้นทุนงาน</div>
+            <div style="width:100px">รหัสสินค้า</div>
+            <div class="flex-1">ชื่อรายการ</div>
+            <div style="width:130px">วัตถุประสงค์</div>
+            <div style="width:50px" class="text-center">จำนวน</div>
+            <div style="width:60px" class="text-center">หน่วย</div>
+            <div style="width:90px" class="text-right">ราคา</div>
+            <div style="width:32px"></div>
           </div>
 
           <div id="itemsTable" class="space-y-2"></div>
@@ -161,13 +163,15 @@
       row.innerHTML = `
         <div class="flex gap-2 items-center flex-wrap md:flex-nowrap">
           <span class="text-amber-500 font-bold text-sm w-5 shrink-0">${idx}</span>
-          <input type="text" class="item-name input-style flex-1 min-w-0" placeholder="ชื่อรายการ / อะไหล่" oninput="calcTotal()">
+          <input type="text" class="item-job input-style shrink-0" style="width:100px" placeholder="รหัสต้นทุน">
+          <input type="text" class="item-prod input-style shrink-0" style="width:100px" placeholder="รหัสสินค้า">
+          <input type="text" class="item-name input-style flex-1 min-w-0" placeholder="ชื่อรายการ" oninput="calcTotal()">
           <select class="item-obj obj-select shrink-0" style="min-width:130px">
             ${objOpts}
           </select>
-          <input type="number" class="item-qty input-style shrink-0" style="width:70px" placeholder="จำนวน" value="1" min="1">
-          <input type="text" class="item-unit input-style shrink-0" style="width:70px" placeholder="หน่วย">
-          <input type="number" class="item-price input-style shrink-0 text-right" style="width:110px" placeholder="ราคา" min="0" oninput="calcTotal()">
+          <input type="number" class="item-qty input-style shrink-0" style="width:50px" placeholder="จำนวน" value="1" min="1">
+          <input type="text" class="item-unit input-style shrink-0" style="width:60px" placeholder="หน่วย">
+          <input type="number" class="item-price input-style shrink-0 text-right" style="width:90px" placeholder="ราคา" min="0" oninput="calcTotal()">
           <button type="button" onclick="removeRow(this)" class="shrink-0 w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition font-bold text-lg">✕</button>
         </div>`;
       table.appendChild(row);
@@ -200,12 +204,14 @@
       e.preventDefault();
       const itemRows = [];
       document.querySelectorAll('#itemsTable .item-row').forEach(row => {
+        const job   = row.querySelector('.item-job')?.value.trim();
+        const prod  = row.querySelector('.item-prod')?.value.trim();
         const item  = row.querySelector('.item-name')?.value.trim();
         const obj   = row.querySelector('.item-obj')?.value;
         const qty   = row.querySelector('.item-qty')?.value.trim();
         const unit  = row.querySelector('.item-unit')?.value.trim();
         const price = row.querySelector('.item-price')?.value.trim();
-        if (item) itemRows.push({ item, objective: obj, qty, unit, price });
+        if (item || job || prod) itemRows.push({ job, prod, item, objective: obj, qty, unit, price });
       });
       if (itemRows.length === 0) { alert('กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการครับ'); return; }
       const rawDate = document.getElementById('reqDate').value;
