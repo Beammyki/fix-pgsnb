@@ -1,270 +1,2096 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | ระบบ PR PEGASUS</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PEGASUS PR Dashboard</title>
+  <meta name="description" content="ระบบติดตามใบขออนุมัติซื้อแบบเรียลไทม์" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
-    *{margin:0;padding:0;box-sizing:border-box;font-family:'Kanit',sans-serif;}
-    body{background:#0f172a;color:#e2e8f0;min-height:100vh;}
-    .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:20px;}
-    .card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px;transition:transform .2s,box-shadow .2s;}
-    .card:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,0.3);}
-    .gradient-text{background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-    .stat-number{font-size:3rem;font-weight:700;line-height:1;}
-    select{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:#e2e8f0;padding:10px 16px;font-family:'Kanit',sans-serif;font-size:14px;cursor:pointer;outline:none;transition:border-color .2s;}
-    select:focus{border-color:#fbbf24;}
-    select option{background:#1e293b;color:#e2e8f0;}
-    .badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;}
-    .badge-green{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.3);}
-    .badge-red{background:rgba(239,68,68,.2);color:#f87171;border:1px solid rgba(239,68,68,.3);}
-    .badge-yellow{background:rgba(245,158,11,.2);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
-    .table-row{border-bottom:1px solid rgba(255,255,255,0.06);transition:background .15s;}
-    .table-row:hover{background:rgba(255,255,255,0.05);}
-    .pulse{animation:pulse 2s infinite;}
-    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
-    .bar-fill{transition:width 1s ease;}
-    ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#1e293b;} ::-webkit-scrollbar-thumb{background:#475569;border-radius:3px;}
+    /* =============================================
+       DESIGN TOKENS & RESET
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-main:      #08111F;
+      --bg-sidebar:   #071426;
+      --bg-card:      #111C2E;
+      --bg-card-hover:#152035;
+      --bg-input:     #0D1929;
+
+      --brand-orange: #F97316;
+      --brand-gold:   #F59E0B;
+      --brand-grad:   linear-gradient(135deg, #F97316, #F59E0B);
+
+      --color-green:  #10B981;
+      --color-yellow: #F59E0B;
+      --color-red:    #EF4444;
+      --color-blue:   #3B82F6;
+      --color-purple: #8B5CF6;
+
+      --text-primary:   #E8EDF5;
+      --text-secondary: #7E9BB5;
+      --text-muted:     #3D5470;
+
+      --border-color:   rgba(255,255,255,0.07);
+      --border-active:  rgba(249,115,22,0.5);
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.35);
+      --shadow-glow: 0 0 20px rgba(249,115,22,0.15);
+
+      --sidebar-w: 230px;
+      --header-h: 72px;
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* =============================================
+       SIDEBAR
+    ============================================= */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: var(--transition);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--brand-grad);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(249,115,22,0.35);
+    }
+
+    .logo-icon svg { color: white; }
+
+    .logo-text {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: var(--brand-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      padding: 0 8px;
+      margin-bottom: 6px;
+      margin-top: 16px;
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 400;
+      transition: var(--transition);
+      position: relative;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      text-decoration: none;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(249,115,22,0.12);
+      color: var(--brand-orange);
+      font-weight: 600;
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--brand-grad);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .nav-item svg { flex-shrink: 0; }
+
+    .sidebar-user {
+      padding: 16px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 36px; height: 36px;
+      background: var(--brand-grad);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 11px; color: var(--text-secondary); }
+
+    /* =============================================
+       MAIN CONTENT
+    ============================================= */
+    .main-content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* =============================================
+       HEADER
+    ============================================= */
+    .top-header {
+      height: var(--header-h);
+      background: rgba(7,20,38,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      gap: 16px;
+      position: sticky;
+      top: 0; z-index: 50;
+    }
+
+    .header-title { flex: 1; }
+    .header-title h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.3px; }
+    .header-title p { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+
+    .header-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 7px 12px;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .search-box:focus-within {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 2px rgba(249,115,22,0.1);
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      width: 160px;
+    }
+
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover { border-color: var(--border-active); color: var(--brand-orange); }
+
+    .badge-dot {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 8px; height: 8px;
+      background: var(--color-red);
+      border-radius: 50%;
+      border: 2px solid var(--bg-sidebar);
+    }
+
+    .select-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      padding: 7px 10px;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .select-box:focus { border-color: var(--border-active); }
+
+    .btn-refresh {
+      display: flex; align-items: center; gap: 7px;
+      background: transparent;
+      border: 1px solid var(--brand-orange);
+      border-radius: var(--radius-sm);
+      color: var(--brand-orange);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-refresh:hover { background: rgba(249,115,22,0.1); box-shadow: var(--shadow-glow); }
+    .btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-refresh.loading .refresh-icon { animation: spin 1s linear infinite; }
+
+    .last-update { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* =============================================
+       PAGE BODY
+    ============================================= */
+    .page-body { padding: 24px 28px; flex: 1; }
+
+    /* =============================================
+       KPI CARDS
+    ============================================= */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+      cursor: default;
+    }
+
+    .kpi-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+
+    .kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; letter-spacing: 0.3px; }
+
+    .kpi-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon.blue   { background: rgba(59,130,246,0.15); color: var(--color-blue); }
+    .kpi-icon.green  { background: rgba(16,185,129,0.15); color: var(--color-green); }
+    .kpi-icon.yellow { background: rgba(245,158,11,0.15); color: var(--color-yellow); }
+    .kpi-icon.red    { background: rgba(239,68,68,0.15);  color: var(--color-red); }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 6px;
+      letter-spacing: -1px;
+    }
+
+    .kpi-value.red { color: var(--color-red); }
+
+    .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+
+    .kpi-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .kpi-badge.positive { background: rgba(16,185,129,0.15); color: var(--color-green); }
+    .kpi-badge.neutral  { background: rgba(59,130,246,0.15);  color: var(--color-blue); }
+
+    .kpi-progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .kpi-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .kpi-sparkline { margin-top: 10px; height: 40px; }
+
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, #152035 25%, #1a2840 50%, #152035 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* =============================================
+       CHARTS ROW
+    ============================================= */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .charts-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      transition: var(--transition);
+    }
+
+    .card:hover { border-color: rgba(255,255,255,0.1); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title svg { color: var(--text-secondary); }
+
+    .card-actions { display: flex; align-items: center; gap: 8px; }
+
+    .select-sm {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-family: 'Kanit', sans-serif;
+      font-size: 12px;
+      padding: 5px 8px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .chart-container { position: relative; }
+
+    /* =============================================
+       DOUGHNUT CARD
+    ============================================= */
+    .doughnut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .doughnut-chart-box {
+      position: relative;
+      flex-shrink: 0;
+      width: 160px; height: 160px;
+    }
+
+    .doughnut-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .doughnut-center .big-num {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .doughnut-center .small-txt {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .doughnut-legend { flex: 1; }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .legend-item:last-child { border-bottom: none; }
+
+    .legend-left { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    .legend-right { text-align: right; }
+    .legend-count { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .legend-pct { font-size: 11px; color: var(--text-muted); }
+
+    /* =============================================
+       PROGRESS BARS (สัดส่วนงบ)
+    ============================================= */
+    .budget-item { margin-bottom: 16px; }
+    .budget-item:last-of-type { margin-bottom: 0; }
+
+    .budget-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .budget-name { font-size: 13px; color: var(--text-primary); }
+    .budget-pct { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+    .progress-track {
+      height: 8px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--brand-grad);
+      transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .budget-amount { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+    .budget-total {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .budget-total .label { font-size: 13px; color: var(--text-secondary); }
+    .budget-total .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .budget-total .pct { font-size: 12px; color: var(--color-green); }
+
+    /* =============================================
+       TABLE
+    ============================================= */
+    .table-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border-color);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .table-title { font-size: 15px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+
+    .table-actions { display: flex; align-items: center; gap: 10px; }
+
+    .table-search {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      gap: 7px;
+      transition: var(--transition);
+    }
+
+    .table-search:focus-within { border-color: var(--border-active); }
+
+    .table-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      width: 180px;
+    }
+
+    .table-search input::placeholder { color: var(--text-muted); }
+
+    .btn-outline {
+      display: flex; align-items: center; gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-outline:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    thead tr { border-bottom: 1px solid var(--border-color); }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+    }
+
+    th:hover { color: var(--text-secondary); }
+
+    th.sorted { color: var(--brand-orange); }
+
+    td {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tbody tr {
+      transition: var(--transition);
+    }
+
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    .pr-id {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-blue);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dept-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(59,130,246,0.12);
+      color: var(--color-blue);
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    .status-pill.approved { background: rgba(16,185,129,0.12); color: var(--color-green); }
+    .status-pill.approved .dot { background: var(--color-green); }
+
+    .status-pill.pending { background: rgba(245,158,11,0.12); color: var(--color-yellow); }
+    .status-pill.pending .dot { background: var(--color-yellow); }
+
+    .status-pill.rejected { background: rgba(239,68,68,0.12); color: var(--color-red); }
+    .status-pill.rejected .dot { background: var(--color-red); }
+
+    .price-col { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+    .action-btn {
+      width: 32px; height: 32px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .action-btn:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+
+    /* Dropdown menu */
+    .dropdown-menu {
+      position: absolute;
+      right: 0; top: calc(100% + 4px);
+      background: #1A2E48;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      z-index: 200;
+      min-width: 150px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: none;
+    }
+
+    .dropdown-menu.open { display: block; }
+
+    .dropdown-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .dropdown-item:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+    .dropdown-item.danger:hover { color: var(--color-red); }
+
+    /* =============================================
+       PAGINATION
+    ============================================= */
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 22px;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-info { font-size: 13px; color: var(--text-muted); }
+
+    .pagination { display: flex; gap: 6px; align-items: center; }
+
+    .page-btn {
+      width: 32px; height: 32px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: 'Kanit', sans-serif;
+      transition: var(--transition);
+    }
+
+    .page-btn:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+    .page-btn.active { background: var(--brand-orange); border-color: var(--brand-orange); color: white; font-weight: 600; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* =============================================
+       EMPTY / ERROR STATES
+    ============================================= */
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      gap: 12px;
+    }
+
+    .state-box svg { opacity: 0.4; }
+    .state-box h3 { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+    .state-box p { font-size: 13px; }
+
+    .btn-retry {
+      margin-top: 8px;
+      background: transparent;
+      border: 1px solid var(--brand-orange);
+      color: var(--brand-orange);
+      font-family: 'Kanit', sans-serif;
+      font-size: 13px;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-retry:hover { background: rgba(249,115,22,0.1); }
+
+    /* =============================================
+       TOAST NOTIFICATIONS
+    ============================================= */
+    #toast-container {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1A2E48;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-primary);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      min-width: 260px;
+      max-width: 360px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success { border-left: 3px solid var(--color-green); }
+    .toast.error   { border-left: 3px solid var(--color-red); }
+    .toast.info    { border-left: 3px solid var(--color-blue); }
+
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(120%); opacity: 0; }
+    }
+
+    /* =============================================
+       MOBILE HAMBURGER
+    ============================================= */
+    .hamburger-btn {
+      display: none;
+      width: 36px; height: 36px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 99;
+    }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 1200px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row, .charts-row-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      :root { --sidebar-w: 0px; }
+
+      .sidebar {
+        transform: translateX(-230px);
+        width: 230px;
+      }
+
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .hamburger-btn { display: flex; }
+
+      .main-content { margin-left: 0; }
+      .top-header { padding: 0 16px; }
+      .page-body { padding: 16px; }
+      .search-box { display: none; }
+      .header-title h1 { font-size: 16px; }
+    }
+
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .header-controls { gap: 6px; }
+      .last-update { display: none; }
+      .select-box { display: none; }
+    }
+
+    /* =============================================
+       SCROLLBAR
+    ============================================= */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1E3050; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2A4268; }
+
+    /* Focus visible */
+    :focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
   </style>
 </head>
 <body>
 
-<!-- Header -->
-<div style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-bottom:1px solid rgba(255,255,255,0.08);padding:20px 32px;">
-  <div style="max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
-    <div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">📊</div>
-        <div>
-          <div class="gradient-text" style="font-size:22px;font-weight:700;">PEGASUS PR Dashboard</div>
-          <div style="font-size:12px;color:#64748b;">ระบบติดตามใบขออนุมัติซื้อแบบเรียลไทม์</div>
+<!-- ========================
+     SIDEBAR OVERLAY (Mobile)
+======================== -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ========================
+     SIDEBAR
+======================== -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="เมนูหลัก">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <i data-lucide="bar-chart-3" width="20" height="20"></i>
+    </div>
+    <span class="logo-text">PEGASUS</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">เมนูหลัก</div>
+
+    <button class="nav-item active" onclick="showPage('overview')" aria-label="ภาพรวม">
+      <i data-lucide="layout-dashboard" width="17" height="17"></i>
+      ภาพรวม
+    </button>
+    <button class="nav-item" onclick="showPage('all-pr')" aria-label="ใบ PR ทั้งหมด">
+      <i data-lucide="file-text" width="17" height="17"></i>
+      ใบ PR ทั้งหมด
+    </button>
+    <button class="nav-item" onclick="showPage('pending')" aria-label="รออนุมัติ">
+      <i data-lucide="clock" width="17" height="17"></i>
+      รออนุมัติ
+    </button>
+    <button class="nav-item" aria-label="รายงาน">
+      <i data-lucide="line-chart" width="17" height="17"></i>
+      รายงาน
+    </button>
+
+    <div class="nav-section-label">ระบบ</div>
+    <button class="nav-item" aria-label="ตั้งค่า">
+      <i data-lucide="settings" width="17" height="17"></i>
+      ตั้งค่า
+    </button>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">N</div>
+    <div class="user-info">
+      <div class="user-name">Nattapong K.</div>
+      <div class="user-role">ผู้ดูแลระบบ</div>
+    </div>
+    <i data-lucide="chevron-up" width="15" height="15" style="color:var(--text-muted);flex-shrink:0;"></i>
+  </div>
+</aside>
+
+<!-- ========================
+     MAIN CONTENT
+======================== -->
+<div class="main-content">
+
+  <!-- HEADER -->
+  <header class="top-header" role="banner">
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="เปิดเมนู">
+      <i data-lucide="menu" width="18" height="18"></i>
+    </button>
+
+    <div class="header-title">
+      <h1>PR Dashboard</h1>
+      <p>ภาพรวมใบขออนุมัติซื้อแบบเรียลไทม์</p>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-box" role="search">
+        <i data-lucide="search" width="14" height="14" style="color:var(--text-muted);flex-shrink:0;"></i>
+        <input type="text" id="headerSearch" placeholder="ค้นหา..." aria-label="ค้นหาในระบบ" oninput="handleHeaderSearch(this.value)" />
+      </div>
+
+      <button class="icon-btn" aria-label="การแจ้งเตือน" title="การแจ้งเตือน">
+        <i data-lucide="bell" width="16" height="16"></i>
+        <span class="badge-dot" id="notifBadge"></span>
+      </button>
+
+      <select class="select-box" id="monthFilter" aria-label="เลือกเดือน" onchange="applyFilters()">
+        <option value="">ทุกเดือน</option>
+        <option value="1">มกราคม</option>
+        <option value="2">กุมภาพันธ์</option>
+        <option value="3">มีนาคม</option>
+        <option value="4">เมษายน</option>
+        <option value="5">พฤษภาคม</option>
+        <option value="6">มิถุนายน</option>
+        <option value="7">กรกฎาคม</option>
+        <option value="8">สิงหาคม</option>
+        <option value="9">กันยายน</option>
+        <option value="10">ตุลาคม</option>
+        <option value="11">พฤศจิกายน</option>
+        <option value="12">ธันวาคม</option>
+      </select>
+
+      <select class="select-box" id="yearFilter" aria-label="เลือกปี" onchange="applyFilters()">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="2024">2024</option>
+      </select>
+
+      <button class="btn-refresh" id="refreshBtn" onclick="loadData()" aria-label="รีเฟรชข้อมูล">
+        <i data-lucide="refresh-cw" width="14" height="14" class="refresh-icon"></i>
+        รีเฟรช
+      </button>
+
+      <span class="last-update" id="lastUpdate">—</span>
+    </div>
+  </header>
+
+  <!-- PAGE BODY -->
+  <main class="page-body" role="main">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid">
+      <!-- Card 1: ใบ PR ทั้งหมด -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">ใบ PR ทั้งหมด</span>
+          <div class="kpi-icon blue" aria-hidden="true">
+            <i data-lucide="file-text" width="18" height="18"></i>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-sub">
+          <span class="kpi-badge positive" id="kpiTotalBadge">
+            <i data-lucide="trending-up" width="11" height="11"></i>
+            โหลด...
+          </span>
+        </div>
+        <canvas id="sparkline1" class="kpi-sparkline" height="40"></canvas>
+      </div>
+
+      <!-- Card 2: อนุมัติแล้ว -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">อนุมัติแล้ว</span>
+          <div class="kpi-icon green" aria-hidden="true">
+            <i data-lucide="check-circle-2" width="18" height="18"></i>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiApproved">—</div>
+        <div class="kpi-sub" id="kpiApprovedSub">—</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" id="kpiApprovedBar" style="width:0%;background:var(--color-green);"></div>
+        </div>
+      </div>
+
+      <!-- Card 3: รอดำเนินการ -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">รอดำเนินการ</span>
+          <div class="kpi-icon yellow" aria-hidden="true">
+            <i data-lucide="hourglass" width="18" height="18"></i>
+          </div>
+        </div>
+        <div class="kpi-value" id="kpiPending">—</div>
+        <div class="kpi-sub" id="kpiPendingSub">—</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" id="kpiPendingBar" style="width:0%;background:var(--color-yellow);"></div>
+        </div>
+      </div>
+
+      <!-- Card 4: งบที่ใช้ไป -->
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">งบที่ใช้ไป</span>
+          <div class="kpi-icon red" aria-hidden="true">
+            <i data-lucide="wallet" width="18" height="18"></i>
+          </div>
+        </div>
+        <div class="kpi-value red" id="kpiBudget">—</div>
+        <div class="kpi-sub">ยอดอนุมัติสะสม</div>
+        <canvas id="sparkline2" class="kpi-sparkline" height="40"></canvas>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-row">
+      <!-- งบประมาณรายแผนก -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="bar-chart-2" width="16" height="16"></i>
+            งบประมาณรายแผนก
+          </div>
+          <div class="card-actions">
+            <select class="select-sm" id="deptChartType" onchange="updateDeptChart()" aria-label="ประเภทกราฟ">
+              <option value="approved">งบอนุมัติ</option>
+              <option value="total">งบทั้งหมด</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container" style="height:220px;">
+          <canvas id="deptChart"></canvas>
+        </div>
+      </div>
+
+      <!-- สถานะใบ PR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="pie-chart" width="16" height="16"></i>
+            สถานะใบ PR
+          </div>
+        </div>
+        <div class="doughnut-wrap">
+          <div class="doughnut-chart-box">
+            <canvas id="statusChart" width="160" height="160"></canvas>
+            <div class="doughnut-center">
+              <div class="big-num" id="doughnutTotal">—</div>
+              <div class="small-txt">รายการ</div>
+            </div>
+          </div>
+          <div class="doughnut-legend" id="statusLegend">
+            <!-- Populated by JS -->
+          </div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <select id="monthFilter" onchange="filterData()">
-        <option value="all">📅 ทุกเดือน</option>
-        <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option>
-        <option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
-        <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option>
-        <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
-      </select>
-      <select id="yearFilter" onchange="filterData()">
-        <option value="all">ทุกปี</option>
-        <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
-      </select>
-      <button onclick="loadData()" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24;padding:10px 18px;border-radius:12px;cursor:pointer;font-family:'Kanit',sans-serif;font-size:14px;transition:background .2s;">🔄 รีเฟรช</button>
-    </div>
-  </div>
-</div>
 
-<div style="max-width:1400px;margin:0 auto;padding:28px 20px;">
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-row-2">
+      <!-- แนวโน้มงบประมาณ -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="trending-up" width="16" height="16"></i>
+            แนวโน้มงบประมาณ
+          </div>
+        </div>
+        <div class="chart-container" style="height:220px;">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
 
-  <!-- Loading -->
-  <div id="loadingState" style="text-align:center;padding:80px 0;">
-    <div class="pulse" style="font-size:48px;margin-bottom:16px;">⚡</div>
-    <div style="color:#64748b;font-size:16px;">กำลังโหลดข้อมูลจากระบบ...</div>
-  </div>
-
-  <div id="mainContent" style="display:none;">
-
-    <!-- KPI Cards -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-      <div class="card" style="border-top:3px solid #3b82f6;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">📋</div>
-        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">ใบ PR ทั้งหมด</div>
-        <div class="stat-number" id="totalCases" style="color:#93c5fd;margin:8px 0;">0</div>
-        <div style="font-size:12px;color:#475569;">เอกสารที่เปิดในช่วงที่เลือก</div>
-      </div>
-      <div class="card" style="border-top:3px solid #10b981;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">✅</div>
-        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">อนุมัติแล้ว</div>
-        <div class="stat-number" id="approvedCases" style="color:#34d399;margin:8px 0;">0</div>
-        <div style="font-size:12px;color:#475569;">ผ่านการอนุมัติงบประมาณ</div>
-      </div>
-      <div class="card" style="border-top:3px solid #f59e0b;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">⏳</div>
-        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">รอดำเนินการ</div>
-        <div class="stat-number" id="pendingCases" style="color:#fbbf24;margin:8px 0;">0</div>
-        <div style="font-size:12px;color:#475569;">ยังรอการอนุมัติ</div>
-      </div>
-      <div class="card" style="border-top:3px solid #ef4444;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:-10px;top:-10px;font-size:60px;opacity:0.07;">💰</div>
-        <div style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">งบที่ใช้ไป (อนุมัติแล้ว)</div>
-        <div class="stat-number" id="totalCost" style="color:#f87171;margin:8px 0;font-size:2rem;">0 ฿</div>
-        <div style="font-size:12px;color:#475569;">ยอดรวมที่ผ่านการอนุมัติ</div>
-      </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;" class="charts-grid">
-      <div class="card" style="min-height:280px;">
-        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">🏢 งบแยกตามแผนก (เฉพาะอนุมัติแล้ว)</h2>
-        <div style="position:relative;height:220px;"><canvas id="deptChart"></canvas></div>
-      </div>
-      <div class="card" style="min-height:280px;">
-        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">🔵 สัดส่วนสถานะใบ PR</h2>
-        <div style="position:relative;height:220px;display:flex;align-items:center;justify-content:center;">
-          <canvas id="statusChart"></canvas>
+      <!-- สัดส่วนงบประมาณ -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i data-lucide="layers" width="16" height="16"></i>
+            สัดส่วนงบประมาณ
+          </div>
+        </div>
+        <div id="budgetBreakdown">
+          <!-- Populated by JS -->
+        </div>
+        <div class="budget-total">
+          <div>
+            <div class="label">รวมทั้งสิ้น</div>
+            <div class="value" id="budgetGrandTotal">—</div>
+          </div>
+          <div class="pct" id="budgetGrandPct">100%</div>
         </div>
       </div>
     </div>
 
-    <!-- Department Budget Bars -->
-    <div class="card" style="margin-bottom:24px;">
-      <h2 style="font-size:15px;font-weight:600;color:#94a3b8;margin-bottom:20px;">📊 งบประมาณแต่ละแผนก (เทียบสัดส่วน)</h2>
-      <div id="deptBars" style="space-y:12px;"></div>
-    </div>
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <i data-lucide="table-2" width="16" height="16"></i>
+          รายการล่าสุด
+        </div>
+        <div class="table-actions">
+          <div class="table-search">
+            <i data-lucide="search" width="13" height="13" style="color:var(--text-muted);flex-shrink:0;"></i>
+            <input type="text" id="tableSearch" placeholder="ค้นหารายการ..." aria-label="ค้นหารายการใบ PR" oninput="handleTableSearch(this.value)" />
+          </div>
 
-    <!-- Recent Table -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-        <h2 style="font-size:15px;font-weight:600;color:#94a3b8;">🕐 รายการล่าสุด</h2>
-        <div id="recordCount" style="font-size:12px;color:#64748b;"></div>
+          <select class="select-sm" id="deptFilterTable" onchange="applyTableFilter()" aria-label="กรองแผนก">
+            <option value="">ทุกแผนก</option>
+          </select>
+
+          <select class="select-sm" id="statusFilterTable" onchange="applyTableFilter()" aria-label="กรองสถานะ">
+            <option value="">ทุกสถานะ</option>
+            <option value="อนุมัติแล้ว">อนุมัติแล้ว</option>
+            <option value="รออนุมัติงบ (PR)">รออนุมัติงบ</option>
+            <option value="รอแอดมินเปิด PR">รอแอดมิน</option>
+            <option value="ไม่อนุมัติงบ PR">ไม่อนุมัติ</option>
+          </select>
+
+          <button class="btn-outline" onclick="exportCSV()" aria-label="ดูทั้งหมด">
+            <i data-lucide="external-link" width="13" height="13"></i>
+            ดูทั้งหมด
+          </button>
+        </div>
       </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
+
+      <div class="table-scroll">
+        <table id="prTable" aria-label="ตารางรายการใบ PR">
           <thead>
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
-              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">รหัส PR</th>
-              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">วันที่</th>
-              <th style="text-align:left;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">แผนก</th>
-              <th style="text-align:right;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">ราคา</th>
-              <th style="text-align:center;padding:10px 12px;font-size:12px;color:#64748b;font-weight:600;">สถานะ</th>
+            <tr>
+              <th onclick="sortTable('prId')" class="sorted" id="th-prId">รหัส PR <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
+              <th onclick="sortTable('date')" id="th-date">วันที่ <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
+              <th onclick="sortTable('dept')" id="th-dept">แผนก <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
+              <th>รายการ</th>
+              <th onclick="sortTable('price')" id="th-price">ราคา (บาท) <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
+              <th>ผู้ขอ</th>
+              <th onclick="sortTable('status')" id="th-status">สถานะ <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
+              <th style="text-align:center;">ดำเนินการ</th>
             </tr>
           </thead>
-          <tbody id="recentTable"></tbody>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="8">
+                <div class="state-box">
+                  <i data-lucide="loader-2" width="36" height="36" style="color:var(--brand-orange);animation:spin 1s linear infinite;"></i>
+                  <h3>กำลังโหลดข้อมูล...</h3>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
-        <div id="emptyState" style="text-align:center;padding:40px;color:#475569;display:none;">
-          <div style="font-size:40px;margin-bottom:8px;">📭</div>
-          <div>ไม่มีข้อมูลในช่วงที่เลือก</div>
-        </div>
+      </div>
+
+      <div class="table-footer">
+        <div class="table-info" id="tableInfo">—</div>
+        <div class="pagination" id="pagination"></div>
       </div>
     </div>
 
+  </main>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- CONFIRM DIALOG (ยืนยันลบ) -->
+<div id="confirmDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:#1A2E48;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:28px;max-width:380px;width:90%;text-align:center;">
+    <i data-lucide="alert-triangle" width="40" height="40" style="color:var(--color-red);margin-bottom:12px;"></i>
+    <h3 style="font-size:16px;margin-bottom:8px;">ยืนยันการลบ</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;">คุณต้องการลบรายการนี้หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="closeConfirm()" style="padding:8px 20px;background:transparent;border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-secondary);font-family:Kanit,sans-serif;cursor:pointer;">ยกเลิก</button>
+      <button onclick="confirmDelete()" style="padding:8px 20px;background:var(--color-red);border:none;border-radius:var(--radius-sm);color:white;font-family:Kanit,sans-serif;cursor:pointer;font-weight:600;">ลบรายการ</button>
+    </div>
   </div>
 </div>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
-  let allData = [], deptChart, statusChart;
+/* =============================================
+   CONFIGURATION — แก้ URL ของ Google Apps Script ตรงนี้
+============================================= */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
 
-  const DEPT_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316'];
+/* =============================================
+   STATE
+============================================= */
+let allData = [];          // ข้อมูลดิบทั้งหมดจาก API
+let filteredData = [];     // ข้อมูลหลังกรองเดือน/ปี
+let tableData = [];        // ข้อมูลหลังกรองตาราง
+let currentPage = 1;
+const ROWS_PER_PAGE = 10;
+let sortCol = 'date';
+let sortDir = 'desc';
+let pendingDeleteId = null;
 
-  function loadData() {
-    document.getElementById('loadingState').style.display = 'block';
-    document.getElementById('mainContent').style.display = 'none';
-    fetch(GAS_URL + "?action=getDashboardData")
-      .then(r => r.json())
-      .then(data => { allData = data; filterData(); document.getElementById('loadingState').style.display = 'none'; document.getElementById('mainContent').style.display = 'block'; })
-      .catch(() => { document.getElementById('loadingState').innerHTML = '<div style="font-size:40px">⚠️</div><div style="color:#f87171;margin-top:8px;">โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ GAS_URL</div>'; });
-  }
+/* =============================================
+   CHART INSTANCES
+============================================= */
+let deptChartInstance   = null;
+let statusChartInstance = null;
+let trendChartInstance  = null;
+let sparkline1Instance  = null;
+let sparkline2Instance  = null;
 
-  function animateNumber(el, target, prefix='', suffix='') {
-    let start = 0, duration = 800, step = target / (duration / 16);
-    const timer = setInterval(() => {
-      start = Math.min(start + step, target);
-      el.textContent = prefix + Math.floor(start).toLocaleString('th-TH') + suffix;
-      if (start >= target) clearInterval(timer);
-    }, 16);
-  }
-
-  function filterData() {
-    const month = document.getElementById('monthFilter').value;
-    const year = document.getElementById('yearFilter').value;
-    let filtered = allData.filter(item => {
-      const d = new Date(item.date);
-      return (month === 'all' || (d.getMonth()+1).toString() === month) &&
-             (year === 'all' || d.getFullYear().toString() === year);
-    });
-
-    const approved = filtered.filter(i => i.status && i.status.includes('อนุมัติงบ'));
-    const pending  = filtered.filter(i => i.status && !i.status.includes('อนุมัติงบ') && !i.status.includes('ไม่อนุมัติ'));
-    const cost = approved.reduce((s, i) => s + (Number(i.price)||0), 0);
-
-    animateNumber(document.getElementById('totalCases'), filtered.length);
-    animateNumber(document.getElementById('approvedCases'), approved.length);
-    animateNumber(document.getElementById('pendingCases'), pending.length);
-    animateNumber(document.getElementById('totalCost'), cost, '', ' ฿');
-
-    // Dept chart
-    const deptSums = {};
-    approved.forEach(i => { deptSums[i.dept] = (deptSums[i.dept]||0) + (Number(i.price)||0); });
-    drawDeptChart(Object.keys(deptSums), Object.values(deptSums));
-    drawDeptBars(deptSums, cost);
-
-    // Status chart
-    const rejected = filtered.filter(i => i.status && i.status.includes('ไม่อนุมัติ'));
-    drawStatusChart(approved.length, pending.length, rejected.length);
-
-    // Table
-    const tbody = document.getElementById('recentTable');
-    const sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 15);
-    document.getElementById('recordCount').textContent = `แสดง ${sorted.length} / ${filtered.length} รายการ`;
-    tbody.innerHTML = sorted.map(item => {
-      const d = new Date(item.date);
-      const dateStr = isNaN(d) ? '-' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
-      const isApproved = item.status?.includes('อนุมัติงบ');
-      const isPending  = !item.status?.includes('อนุมัติ') && !item.status?.includes('ไม่อนุมัติ');
-      const badge = isApproved ? '<span class="badge badge-green">✅ อนุมัติแล้ว</span>'
-                  : isPending  ? '<span class="badge badge-yellow">⏳ รอดำเนินการ</span>'
-                  : '<span class="badge badge-red">❌ ไม่อนุมัติ</span>';
-      return `<tr class="table-row">
-        <td style="padding:12px;font-size:13px;color:#93c5fd;font-weight:600;">${item.prId||'-'}</td>
-        <td style="padding:12px;font-size:13px;color:#94a3b8;">${dateStr}</td>
-        <td style="padding:12px;font-size:13px;color:#e2e8f0;">${item.dept||'-'}</td>
-        <td style="padding:12px;font-size:13px;color:#fbbf24;text-align:right;font-weight:600;">${Number(item.price).toLocaleString('th-TH')} ฿</td>
-        <td style="padding:12px;text-align:center;">${badge}</td>
-      </tr>`;
-    }).join('');
-    document.getElementById('emptyState').style.display = sorted.length === 0 ? 'block' : 'none';
-  }
-
-  function drawDeptChart(labels, data) {
-    const ctx = document.getElementById('deptChart').getContext('2d');
-    if (deptChart) deptChart.destroy();
-    deptChart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i) => DEPT_COLORS[i % DEPT_COLORS.length] + 'cc'), borderRadius: 8, borderWidth: 0 }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-        scales: { y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b',callback:v=>v.toLocaleString()+'฿'}}, x:{grid:{display:false},ticks:{color:'#64748b'}} },
-        animation:{duration:1000,easing:'easeOutQuart'} }
-    });
-  }
-
-  function drawStatusChart(approved, pending, rejected) {
-    const ctx = document.getElementById('statusChart').getContext('2d');
-    if (statusChart) statusChart.destroy();
-    statusChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: { labels:['อนุมัติแล้ว','รอดำเนินการ','ไม่อนุมัติ'], datasets:[{data:[approved,pending,rejected],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderWidth:0,hoverOffset:8}] },
-      options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
-        plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Kanit',size:12},padding:12}}},
-        animation:{duration:1000} }
-    });
-  }
-
-  function drawDeptBars(deptSums, total) {
-    const container = document.getElementById('deptBars');
-    const entries = Object.entries(deptSums).sort((a,b) => b[1]-a[1]);
-    container.innerHTML = entries.map(([dept, sum], i) => {
-      const pct = total > 0 ? (sum/total*100).toFixed(1) : 0;
-      const color = DEPT_COLORS[i % DEPT_COLORS.length];
-      return `<div style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-          <span style="color:#e2e8f0;">${dept}</span>
-          <span style="color:${color};font-weight:600;">${Number(sum).toLocaleString('th-TH')} ฿ <span style="color:#64748b;font-weight:400;">(${pct}%)</span></span>
-        </div>
-        <div style="background:rgba(255,255,255,0.07);border-radius:100px;height:8px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:100px;transition:width 1s ease;"></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
+/* =============================================
+   INIT
+============================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons(); // สร้างไอคอนทั้งหมด
   loadData();
+});
+
+/* =============================================
+   DATA LOADING
+============================================= */
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${GAS_URL}?action=getDashboardData`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    allData = Array.isArray(data) ? data : [];
+
+    // อัปเดตเวลา
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      `อัปเดตล่าสุด ${now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
+
+    applyFilters();
+    populateDeptFilter();
+    showToast('โหลดข้อมูลสำเร็จ', 'success');
+
+  } catch (err) {
+    console.error('API Error:', err);
+    showError();
+    showToast('ไม่สามารถเชื่อมต่อ API ได้', 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+/* =============================================
+   FILTER: เดือน & ปี
+============================================= */
+function applyFilters() {
+  const month = document.getElementById('monthFilter').value;
+  const year  = document.getElementById('yearFilter').value;
+
+  filteredData = allData.filter(row => {
+    const d = new Date(row.date);
+    if (isNaN(d)) return true; // ถ้า parse ไม่ได้ ให้ผ่าน
+    const rowYear  = d.getFullYear().toString();
+    const rowMonth = (d.getMonth() + 1).toString();
+    if (year  && rowYear  !== year)  return false;
+    if (month && rowMonth !== month) return false;
+    return true;
+  });
+
+  updateKPIs();
+  updateDeptChart();
+  updateStatusChart();
+  updateTrendChart();
+  updateBudgetBreakdown();
+
+  // ใช้ filteredData เป็นฐานของตาราง แล้วกรองต่อ
+  applyTableFilter();
+}
+
+/* =============================================
+   KPI CARDS
+============================================= */
+function updateKPIs() {
+  const total    = filteredData.length;
+  const approved = filteredData.filter(r => isApproved(r.status)).length;
+  const pending  = filteredData.filter(r => isPending(r.status)).length;
+  const budget   = filteredData
+    .filter(r => isApproved(r.status))
+    .reduce((s, r) => s + (parseFloat(r.price) || 0), 0);
+
+  // Animate numbers
+  animateNumber('kpiTotal', total, '');
+  animateNumber('kpiApproved', approved, '');
+  animateNumber('kpiPending', pending, '');
+  animateNumber('kpiBudget', budget, '฿', true);
+
+  // Sub-labels & badges
+  const approvedPct = total > 0 ? Math.round((approved / total) * 100) : 0;
+  const pendingPct  = total > 0 ? Math.round((pending  / total) * 100) : 0;
+
+  document.getElementById('kpiTotalBadge').innerHTML =
+    `<i data-lucide="trending-up" width="11" height="11"></i> ${total > 0 ? '+รายการใหม่' : 'ไม่มีข้อมูล'}`;
+
+  document.getElementById('kpiApprovedSub').textContent =
+    total > 0 ? `${approvedPct}% ของรายการ` : 'ไม่มีข้อมูล';
+
+  document.getElementById('kpiPendingSub').textContent =
+    pending === 0 ? 'ไม่มีรายการค้าง' : `${pendingPct}% รอดำเนินการ`;
+
+  // Progress bars
+  setTimeout(() => {
+    document.getElementById('kpiApprovedBar').style.width = approvedPct + '%';
+    document.getElementById('kpiPendingBar').style.width  = pendingPct  + '%';
+  }, 100);
+
+  // Sparklines
+  drawSparkline('sparkline1', filteredData.length > 0 ? buildMonthlyCount() : [], '#3B82F6');
+  drawSparkline('sparkline2', filteredData.length > 0 ? buildMonthlyBudget() : [], '#EF4444');
+
+  lucide.createIcons();
+}
+
+function animateNumber(id, target, prefix = '', isCurrency = false) {
+  const el = document.getElementById(id);
+  const start = 0;
+  const duration = 800;
+  const startTime = performance.now();
+
+  const fmt = (v) => {
+    if (isCurrency) return prefix + new Intl.NumberFormat('th-TH').format(Math.round(v));
+    return prefix + Math.round(v).toLocaleString('th-TH');
+  };
+
+  const tick = (now) => {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = fmt(start + (target - start) * ease);
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+
+  requestAnimationFrame(tick);
+}
+
+/* =============================================
+   SPARKLINE
+============================================= */
+function drawSparkline(canvasId, values, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  if (canvasId === 'sparkline1' && sparkline1Instance) { sparkline1Instance.destroy(); }
+  if (canvasId === 'sparkline2' && sparkline2Instance) { sparkline2Instance.destroy(); }
+
+  const labels = Array.from({ length: values.length }, (_, i) => i + 1);
+  const instance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: color,
+        borderWidth: 1.5,
+        fill: true,
+        backgroundColor: color + '18',
+        tension: 0.4,
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } },
+      animation: { duration: 600 },
+    }
+  });
+
+  if (canvasId === 'sparkline1') sparkline1Instance = instance;
+  if (canvasId === 'sparkline2') sparkline2Instance = instance;
+}
+
+/* =============================================
+   DEPT CHART (Horizontal Bar)
+============================================= */
+function updateDeptChart() {
+  const depts = {};
+  filteredData.forEach(row => {
+    const dept = row.dept || 'ไม่ระบุ';
+    if (!depts[dept]) depts[dept] = 0;
+    if (isApproved(row.status)) depts[dept] += parseFloat(row.price) || 0;
+  });
+
+  const labels  = Object.keys(depts);
+  const values  = Object.values(depts);
+  const palette = ['#3B82F6','#6366F1','#8B5CF6','#0EA5E9','#2DD4BF','#38BDF8'];
+  const colors  = labels.map((_, i) => palette[i % palette.length]);
+
+  const canvas = document.getElementById('deptChart');
+  if (deptChartInstance) deptChartInstance.destroy();
+
+  deptChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors.map(c => c + 'AA'),
+        borderColor: colors,
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ฿${ctx.raw.toLocaleString('th-TH')} (${labels[ctx.dataIndex]})`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#7E9BB5', font: { family: 'Kanit', size: 11 },
+            callback: v => '฿' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)
+          }
+        },
+        y: { grid: { display: false }, ticks: { color: '#7E9BB5', font: { family: 'Kanit', size: 12 } } }
+      },
+      animation: { duration: 800, easing: 'easeInOutQuart' }
+    }
+  });
+}
+
+/* =============================================
+   STATUS DOUGHNUT CHART
+============================================= */
+function updateStatusChart() {
+  const approved = filteredData.filter(r => isApproved(r.status)).length;
+  const pending  = filteredData.filter(r => isPending(r.status)).length;
+  const rejected = filteredData.filter(r => isRejected(r.status)).length;
+  const total    = filteredData.length;
+
+  document.getElementById('doughnutTotal').textContent = total;
+
+  // Legend
+  const pct = (n) => total > 0 ? ((n / total) * 100).toFixed(0) : 0;
+  document.getElementById('statusLegend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:#10B981;"></div>อนุมัติแล้ว</div>
+      <div class="legend-right"><div class="legend-count">${approved}</div><div class="legend-pct">${pct(approved)}%</div></div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:#F59E0B;"></div>รอดำเนินการ</div>
+      <div class="legend-right"><div class="legend-count">${pending}</div><div class="legend-pct">${pct(pending)}%</div></div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-left"><div class="legend-dot" style="background:#EF4444;"></div>ไม่อนุมัติ</div>
+      <div class="legend-right"><div class="legend-count">${rejected}</div><div class="legend-pct">${pct(rejected)}%</div></div>
+    </div>
+  `;
+
+  const canvas = document.getElementById('statusChart');
+  if (statusChartInstance) statusChartInstance.destroy();
+
+  statusChartInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['อนุมัติแล้ว', 'รอดำเนินการ', 'ไม่อนุมัติ'],
+      datasets: [{
+        data: [approved || 0.001, pending || 0.001, rejected || 0.001],
+        backgroundColor: ['#10B98133','#F59E0B33','#EF444433'],
+        borderColor: ['#10B981','#F59E0B','#EF4444'],
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.raw === 0.001 ? 0 : ctx.raw} รายการ`
+          }
+        }
+      },
+      animation: { animateRotate: true, duration: 800 }
+    }
+  });
+}
+
+/* =============================================
+   TREND CHART (Area)
+============================================= */
+function updateTrendChart() {
+  const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+  // สร้างข้อมูลรายเดือน 2 ปี
+  const yearSelected = parseInt(document.getElementById('yearFilter').value) || 2026;
+  const monthly = {};
+  [yearSelected, yearSelected - 1].forEach(yr => { monthly[yr] = new Array(12).fill(0); });
+
+  allData.forEach(row => {
+    const d = new Date(row.date);
+    if (isNaN(d)) return;
+    const yr = d.getFullYear();
+    const mo = d.getMonth();
+    if (monthly[yr]) monthly[yr][mo] += parseFloat(row.price) || 0;
+  });
+
+  const canvas = document.getElementById('trendChart');
+  if (trendChartInstance) trendChartInstance.destroy();
+
+  trendChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: MONTHS_TH,
+      datasets: [
+        {
+          label: `ปี ${yearSelected}`,
+          data: monthly[yearSelected],
+          borderColor: '#F97316',
+          backgroundColor: 'rgba(249,115,22,0.08)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#F97316',
+          pointBorderColor: '#08111F',
+          pointBorderWidth: 2,
+        },
+        {
+          label: `ปี ${yearSelected - 1}`,
+          data: monthly[yearSelected - 1],
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59,130,246,0.05)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          pointBackgroundColor: '#3B82F6',
+          pointBorderColor: '#08111F',
+          pointBorderWidth: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#7E9BB5', font: { family: 'Kanit', size: 12 }, boxWidth: 16, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ฿${ctx.raw.toLocaleString('th-TH')}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#7E9BB5', font: { family: 'Kanit', size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#7E9BB5',
+            font: { family: 'Kanit', size: 11 },
+            callback: v => '฿' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)
+          }
+        }
+      },
+      animation: { duration: 900 }
+    }
+  });
+}
+
+/* =============================================
+   BUDGET BREAKDOWN (Progress Bars)
+============================================= */
+function updateBudgetBreakdown() {
+  const depts = {};
+  filteredData.forEach(row => {
+    if (!isApproved(row.status)) return;
+    const dept = row.dept || 'ไม่ระบุ';
+    depts[dept] = (depts[dept] || 0) + (parseFloat(row.price) || 0);
+  });
+
+  const total = Object.values(depts).reduce((s, v) => s + v, 0);
+  document.getElementById('budgetGrandTotal').textContent = '฿' + total.toLocaleString('th-TH');
+
+  const colors = ['#F97316','#3B82F6','#8B5CF6','#10B981','#F59E0B'];
+  const html = Object.entries(depts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([dept, val], i) => {
+      const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+      const color = colors[i % colors.length];
+      return `
+        <div class="budget-item" title="${dept}: ฿${val.toLocaleString('th-TH')} (${pct}%)">
+          <div class="budget-row">
+            <span class="budget-name">${dept}</span>
+            <span class="budget-pct">${pct}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:0%;background:${color};" data-width="${pct}"></div>
+          </div>
+          <div class="budget-amount">฿${val.toLocaleString('th-TH')}</div>
+        </div>`;
+    }).join('');
+
+  document.getElementById('budgetBreakdown').innerHTML = html || '<div style="color:var(--text-muted);font-size:13px;">ไม่มีข้อมูล</div>';
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.progress-fill[data-width]').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }, 100);
+}
+
+/* =============================================
+   TABLE
+============================================= */
+function applyTableFilter() {
+  const deptF   = document.getElementById('deptFilterTable').value;
+  const statusF = document.getElementById('statusFilterTable').value;
+  const searchQ = document.getElementById('tableSearch').value.toLowerCase().trim();
+
+  tableData = filteredData.filter(row => {
+    if (deptF   && row.dept   !== deptF)                     return false;
+    if (statusF && row.status !== statusF)                   return false;
+    if (searchQ) {
+      const haystack = [row.prId, row.dept, row.item || row.desc || '', row.status].join(' ').toLowerCase();
+      if (!haystack.includes(searchQ)) return false;
+    }
+    return true;
+  });
+
+  sortTableData();
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'desc'; }
+
+  // Update header styles
+  document.querySelectorAll('th[id^="th-"]').forEach(el => el.classList.remove('sorted'));
+  const thEl = document.getElementById(`th-${col}`);
+  if (thEl) thEl.classList.add('sorted');
+
+  sortTableData();
+}
+
+function sortTableData() {
+  tableData.sort((a, b) => {
+    let vA = a[sortCol] ?? '';
+    let vB = b[sortCol] ?? '';
+    if (sortCol === 'price') { vA = parseFloat(vA) || 0; vB = parseFloat(vB) || 0; }
+    if (sortCol === 'date')  { vA = new Date(vA); vB = new Date(vB); }
+    if (vA < vB) return sortDir === 'asc' ? -1 : 1;
+    if (vA > vB) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  const page  = tableData.slice(start, start + ROWS_PER_PAGE);
+
+  if (tableData.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="state-box">
+          <i data-lucide="inbox" width="40" height="40"></i>
+          <h3>ไม่พบข้อมูล</h3>
+          <p>ลองเปลี่ยนเงื่อนไขการค้นหาหรือกรองข้อมูลใหม่</p>
+        </div>
+      </td></tr>`;
+    lucide.createIcons();
+    renderPagination();
+    updateTableInfo();
+    return;
+  }
+
+  tbody.innerHTML = page.map(row => {
+    const statusClass = getStatusClass(row.status);
+    const statusLabel = getStatusLabel(row.status);
+    const dateStr     = formatDateTH(row.date);
+    const itemText    = row.item || row.desc || '—';
+    const priceStr    = row.price ? '฿' + parseFloat(row.price).toLocaleString('th-TH') : '—';
+
+    return `
+      <tr>
+        <td><span class="pr-id">${row.prId || '—'}</span></td>
+        <td>${dateStr}</td>
+        <td><span class="dept-badge">${row.dept || '—'}</span></td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${itemText}">${itemText}</td>
+        <td class="price-col">${priceStr}</td>
+        <td>${row.requester || '—'}</td>
+        <td>
+          <span class="status-pill ${statusClass}">
+            <span class="dot"></span>
+            ${statusLabel}
+          </span>
+        </td>
+        <td style="text-align:center;">
+          <div style="position:relative;display:inline-block;">
+            <button class="action-btn" onclick="toggleDropdown(this)" aria-label="ดำเนินการ" title="ดำเนินการ">
+              <i data-lucide="more-horizontal" width="15" height="15"></i>
+            </button>
+            <div class="dropdown-menu">
+              <div class="dropdown-item" onclick="viewDetail('${row.prId}')">
+                <i data-lucide="eye" width="13" height="13"></i> ดูรายละเอียด
+              </div>
+              <div class="dropdown-item">
+                <i data-lucide="edit-2" width="13" height="13"></i> แก้ไข
+              </div>
+              <div class="dropdown-item" onclick="downloadPR('${row.prId}')">
+                <i data-lucide="download" width="13" height="13"></i> ดาวน์โหลด PDF
+              </div>
+              <div class="dropdown-item danger" onclick="askDelete('${row.prId}')">
+                <i data-lucide="trash-2" width="13" height="13"></i> ลบรายการ
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  lucide.createIcons();
+  renderPagination();
+  updateTableInfo();
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(tableData.length / ROWS_PER_PAGE);
+  const pg = document.getElementById('pagination');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''} aria-label="หน้าก่อนหน้า">
+    <i data-lucide="chevron-left" width="14" height="14"></i></button>`;
+
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})" aria-label="หน้า ${i}">${i}</button>`;
+  }
+
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''} aria-label="หน้าถัดไป">
+    <i data-lucide="chevron-right" width="14" height="14"></i></button>`;
+
+  pg.innerHTML = html;
+  lucide.createIcons();
+}
+
+function goPage(p) {
+  const totalPages = Math.ceil(tableData.length / ROWS_PER_PAGE);
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+}
+
+function updateTableInfo() {
+  const start = (currentPage - 1) * ROWS_PER_PAGE + 1;
+  const end   = Math.min(currentPage * ROWS_PER_PAGE, tableData.length);
+  const el    = document.getElementById('tableInfo');
+  if (tableData.length === 0) { el.textContent = 'ไม่พบรายการ'; return; }
+  el.textContent = `แสดง ${start}–${end} จาก ${tableData.length} รายการ`;
+}
+
+/* =============================================
+   SEARCH HANDLERS
+============================================= */
+let searchTimer;
+function handleHeaderSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    document.getElementById('tableSearch').value = val;
+    applyTableFilter();
+  }, 300);
+}
+
+function handleTableSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => applyTableFilter(), 300);
+}
+
+/* =============================================
+   DROPDOWN TOGGLE
+============================================= */
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.action-btn') && !e.target.closest('.dropdown-menu')) {
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+function toggleDropdown(btn) {
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+  lucide.createIcons();
+}
+
+/* =============================================
+   ACTION HANDLERS
+============================================= */
+function viewDetail(prId) {
+  showToast(`กำลังเปิดรายละเอียด ${prId}`, 'info');
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function downloadPR(prId) {
+  const row = allData.find(r => r.prId === prId);
+  if (row && row.pdfUrl) window.open(row.pdfUrl, '_blank');
+  else showToast(`ไม่พบลิงก์ PDF สำหรับ ${prId}`, 'error');
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function askDelete(prId) {
+  pendingDeleteId = prId;
+  document.getElementById('confirmDialog').style.display = 'flex';
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  lucide.createIcons();
+}
+
+function closeConfirm() {
+  document.getElementById('confirmDialog').style.display = 'none';
+  pendingDeleteId = null;
+}
+
+function confirmDelete() {
+  showToast(`ลบรายการ ${pendingDeleteId} เรียบร้อย (จำลอง)`, 'success');
+  closeConfirm();
+}
+
+function exportCSV() {
+  showToast('กำลังส่งออกข้อมูล...', 'info');
+}
+
+/* =============================================
+   POPULATE DEPT FILTER
+============================================= */
+function populateDeptFilter() {
+  const depts = [...new Set(allData.map(r => r.dept).filter(Boolean))];
+  const sel   = document.getElementById('deptFilterTable');
+  const cur   = sel.value;
+  sel.innerHTML = '<option value="">ทุกแผนก</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+  sel.value = cur;
+}
+
+/* =============================================
+   SIDEBAR & NAVIGATION
+============================================= */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+function showPage(page) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  if (page === 'pending') {
+    document.getElementById('statusFilterTable').value = 'รออนุมัติงบ (PR)';
+    applyTableFilter();
+    document.getElementById('prTable').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    document.getElementById('statusFilterTable').value = '';
+    applyTableFilter();
+  }
+
+  if (window.innerWidth <= 900) toggleSidebar();
+}
+
+/* =============================================
+   ERROR STATE
+============================================= */
+function showError() {
+  document.getElementById('tableBody').innerHTML = `
+    <tr><td colspan="8">
+      <div class="state-box">
+        <i data-lucide="wifi-off" width="40" height="40"></i>
+        <h3>ไม่สามารถเชื่อมต่อ API ได้</h3>
+        <p>กรุณาตรวจสอบ GAS_URL หรือการเชื่อมต่ออินเทอร์เน็ต</p>
+        <button class="btn-retry" onclick="loadData()">ลองใหม่อีกครั้ง</button>
+      </div>
+    </td></tr>`;
+  lucide.createIcons();
+}
+
+/* =============================================
+   TOAST NOTIFICATION
+============================================= */
+function showToast(msg, type = 'info') {
+  const icons = { success: 'check-circle', error: 'x-circle', info: 'info' };
+  const colors = { success: 'var(--color-green)', error: 'var(--color-red)', info: 'var(--color-blue)' };
+  const container = document.getElementById('toast-container');
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i data-lucide="${icons[type]}" width="16" height="16" style="color:${colors[type]};flex-shrink:0;"></i> ${msg}`;
+  container.appendChild(toast);
+  lucide.createIcons();
+
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+/* =============================================
+   HELPERS
+============================================= */
+function isApproved(status) {
+  return ['อนุมัติงบประมาณแล้ว','อนุมัติแล้ว','approved'].includes(status);
+}
+
+function isPending(status) {
+  return ['รออนุมัติงบ (PR)','รออนุมัติซ่อม','รอแอดมินเปิด PR','กำลังขออนุมัติงบ PR'].includes(status);
+}
+
+function isRejected(status) {
+  return ['ไม่อนุมัติงบ PR','ไม่อนุมัติซ่อม','rejected'].includes(status);
+}
+
+function getStatusClass(status) {
+  if (isApproved(status)) return 'approved';
+  if (isPending(status))  return 'pending';
+  if (isRejected(status)) return 'rejected';
+  return 'pending';
+}
+
+function getStatusLabel(status) {
+  if (isApproved(status)) return 'อนุมัติแล้ว';
+  if (isRejected(status)) return 'ไม่อนุมัติ';
+  return 'รอดำเนินการ';
+}
+
+function formatDateTH(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr || '—';
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function buildMonthlyCount() {
+  const monthly = new Array(12).fill(0);
+  filteredData.forEach(r => {
+    const d = new Date(r.date);
+    if (!isNaN(d)) monthly[d.getMonth()]++;
+  });
+  return monthly;
+}
+
+function buildMonthlyBudget() {
+  const monthly = new Array(12).fill(0);
+  filteredData.filter(r => isApproved(r.status)).forEach(r => {
+    const d = new Date(r.date);
+    if (!isNaN(d)) monthly[d.getMonth()] += parseFloat(r.price) || 0;
+  });
+  return monthly;
+}
+
+/* =============================================
+   CHART.JS GLOBAL DEFAULTS
+============================================= */
+Chart.defaults.font.family = 'Kanit';
+Chart.defaults.color = '#7E9BB5';
 </script>
 </body>
 </html>
