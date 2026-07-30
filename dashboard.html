@@ -406,7 +406,8 @@
       transition: width 1s cubic-bezier(0.4,0,0.2,1);
     }
 
-    .kpi-sparkline { margin-top: 10px; height: 40px; }
+    .kpi-sparkline-wrap { margin-top: 10px; height: 40px; position: relative; overflow: hidden; }
+    .kpi-sparkline-wrap canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
 
     /* Skeleton loading */
     .skeleton {
@@ -1078,7 +1079,7 @@
             โหลด...
           </span>
         </div>
-        <canvas id="sparkline1" class="kpi-sparkline" height="40"></canvas>
+        <div class="kpi-sparkline-wrap"><canvas id="sparkline1"></canvas></div>
       </div>
 
       <!-- Card 2: อนุมัติแล้ว -->
@@ -1121,7 +1122,7 @@
         </div>
         <div class="kpi-value red" id="kpiBudget">—</div>
         <div class="kpi-sub">ยอดอนุมัติสะสม</div>
-        <canvas id="sparkline2" class="kpi-sparkline" height="40"></canvas>
+        <div class="kpi-sparkline-wrap"><canvas id="sparkline2"></canvas></div>
       </div>
     </div>
 
@@ -1293,7 +1294,7 @@
 /* =============================================
    CONFIGURATION — แก้ URL ของ Google Apps Script ตรงนี้
 ============================================= */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
+const GAS_URL = "https://script.google.com/macros/s/ใส่-URL-ของคุณ-ที่นี่/exec";
 
 /* =============================================
    STATE
@@ -1460,6 +1461,12 @@ function drawSparkline(canvasId, values, color) {
   if (canvasId === 'sparkline1' && sparkline1Instance) { sparkline1Instance.destroy(); }
   if (canvasId === 'sparkline2' && sparkline2Instance) { sparkline2Instance.destroy(); }
 
+  // ดึงขนาดจาก wrapper div (parent) เพื่อ set canvas อย่างชัดเจน
+  const wrap = canvas.parentElement;
+  const w = wrap ? wrap.offsetWidth : 200;
+  canvas.width  = w;
+  canvas.height = 40;
+
   const labels = Array.from({ length: values.length }, (_, i) => i + 1);
   const instance = new Chart(canvas, {
     type: 'line',
@@ -1476,7 +1483,7 @@ function drawSparkline(canvasId, values, color) {
       }]
     },
     options: {
-      responsive: true,
+      responsive: false,          // ❌ ปิด responsive ป้องกันการยืดอัตโนมัติ
       maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: { x: { display: false }, y: { display: false } },
