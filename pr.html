@@ -610,17 +610,41 @@ function updateAddButton(){
 
 function calcTotal(){
   let subtotal=0,totalQty=0,rowCount=0;
-  document.getElementById('itemsTable').querySelectorAll('tr').forEach(tr=>{
-    const qty=parseFloat(tr.querySelector('.item-qty')?.value)||0;
-    const price=parseFloat(tr.querySelector('.item-price')?.value)||0;
-    const rt=qty*price; subtotal+=rt; totalQty+=qty; rowCount++;
-    const rtEl=tr.querySelector('.item-rowtotal');if(rtEl)rtEl.textContent=THB.format(rt);
-  });
-  document.getElementById('mobileItems').querySelectorAll('.item-card').forEach(card=>{
-    const qty=parseFloat(card.querySelector('.item-qty')?.value)||0;
-    const price=parseFloat(card.querySelector('.item-price')?.value)||0;
-    const rt=card.querySelector('.item-rowtotal');if(rt)rt.textContent=THB.format(qty*price);
-  });
+  const isMobile=window.innerWidth<=700;
+  if(!isMobile){
+    // Desktop: คำนวณจากตาราง
+    document.getElementById('itemsTable').querySelectorAll('tr').forEach(tr=>{
+      const qty=parseFloat(tr.querySelector('.item-qty')?.value)||0;
+      const price=parseFloat(tr.querySelector('.item-price')?.value)||0;
+      const rt=qty*price; subtotal+=rt; totalQty+=qty; rowCount++;
+      const rtEl=tr.querySelector('.item-rowtotal');if(rtEl)rtEl.textContent=THB.format(rt);
+    });
+    // อัปเดต mobile card display ตาม desktop
+    document.getElementById('mobileItems').querySelectorAll('.item-card').forEach((card,i)=>{
+      const tr=document.getElementById('itemsTable').querySelectorAll('tr')[i];if(!tr)return;
+      const qty=parseFloat(tr.querySelector('.item-qty')?.value)||0;
+      const price=parseFloat(tr.querySelector('.item-price')?.value)||0;
+      const rt=card.querySelector('.item-rowtotal');if(rt)rt.textContent=THB.format(qty*price);
+    });
+  } else {
+    // Mobile: คำนวณจาก card
+    document.getElementById('mobileItems').querySelectorAll('.item-card').forEach(card=>{
+      const qty=parseFloat(card.querySelector('.item-qty')?.value)||0;
+      const price=parseFloat(card.querySelector('.item-price')?.value)||0;
+      const rt=qty*price; subtotal+=rt; totalQty+=qty; rowCount++;
+      const rtEl=card.querySelector('.item-rowtotal');if(rtEl)rtEl.textContent=THB.format(rt);
+    });
+    // sync กลับไปที่ desktop table ด้วย เผื่อ user หมุนจอ
+    document.getElementById('mobileItems').querySelectorAll('.item-card').forEach((card,i)=>{
+      const tr=document.getElementById('itemsTable').querySelectorAll('tr')[i];if(!tr)return;
+      const sv=(mCls,dCls)=>{const mv=card.querySelector(mCls)?.value;const di=tr.querySelector(dCls);if(di&&mv!==undefined)di.value=mv;};
+      sv('.item-name','.item-name');sv('.item-job','.item-job');sv('.item-prod','.item-prod');
+      sv('.item-qty','.item-qty');sv('.item-unit','.item-unit');sv('.item-price','.item-price');
+      const mObj=card.querySelector('.item-obj')?.value;const dObj=tr.querySelector('.item-obj');if(dObj&&mObj)dObj.value=mObj;
+      const rtEl=tr.querySelector('.item-rowtotal');
+      if(rtEl){const q=parseFloat(tr.querySelector('.item-qty')?.value)||0;const p=parseFloat(tr.querySelector('.item-price')?.value)||0;rtEl.textContent=THB.format(q*p);}
+    });
+  }
   const useVat=document.getElementById('vatToggle').checked;
   const vatAmt=useVat?subtotal*0.07:0;
   const total=subtotal+vatAmt;
