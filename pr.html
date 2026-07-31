@@ -437,7 +437,8 @@
 <div id="toast-box" aria-live="polite"></div>
 
 <script>
-const GAS_URL = "https://fix-pgsn.naravichku.workers.dev";
+const GAS_URL_GET  = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec"; // GET: ดึงข้อมูล
+const GAS_URL_POST = "https://fix-pgsn.naravichku.workers.dev";                                                                                            // POST: ส่งข้อมูล
 const OBJ_OPTIONS = [
   {value:'เพื่อขาย/รอเบิกใช้',label:'เพื่อขาย/รอเบิกใช้'},
   {value:'สินทรัพย์ถาวร',label:'สินทรัพย์ถาวร'},
@@ -454,7 +455,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   const p=new URLSearchParams(window.location.search);
   const tId=p.get('ticketId');
   document.getElementById('ticketId').value=tId||'';
-  if(tId){ loadTicketData(tId); } else {
+  if(tId){
+    // ถ้ามี ticketId ใหม่ในลิงก์ ให้ล้าง Draft เก่าทิ้งก่อน เพื่อไม่ให้ข้อมูลเก่าโผล่
+    localStorage.removeItem(DRAFT_KEY);
+    loadTicketData(tId);
+  } else {
     showTicketError('ไม่พบรหัสแจ้งซ่อม','กรุณาเข้าสู่หน้านี้ผ่านลิงก์ที่ได้รับจาก LINE เท่านั้น');
     document.getElementById('submitBtn').disabled=true;
     document.getElementById('mobileSubmitBtn').disabled=true;
@@ -471,7 +476,7 @@ async function loadTicketData(ticketId){
   document.getElementById('ticketLoading').style.display='block';
   document.getElementById('ticketInfo').style.display='none';
   try{
-    const res=await fetch(`${GAS_URL}?action=getTicketData&ticketId=${encodeURIComponent(ticketId)}`);
+    const res=await fetch(`${GAS_URL_GET}?action=getTicketData&ticketId=${encodeURIComponent(ticketId)}`);
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     document.getElementById('ticketLoading').style.display='none';
@@ -726,7 +731,7 @@ async function handleSubmit(){
     quotationImage:base64Quote
   };
   try{
-    const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'submitPR',prData}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
+    const res=await fetch(GAS_URL_POST,{method:'POST',body:JSON.stringify({action:'submitPR',prData}),headers:{'Content-Type':'text/plain;charset=utf-8'}});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const result=await res.json();
     if(!result.success)throw new Error(result.error||'ระบบตอบกลับผิดปกติ');
