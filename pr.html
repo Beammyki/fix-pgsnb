@@ -437,8 +437,9 @@
 <div id="toast-box" aria-live="polite"></div>
 
 <script>
-const GAS_URL_GET  = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec"; // GET: ดึงข้อมูล
-const GAS_URL_POST = "https://fix-pgsn.naravichku.workers.dev";                                                                                            // POST: ส่งข้อมูล
+// ทั้ง GET และ POST ส่งตรงไป Apps Script เพราะ Cloudflare Worker รองรับเฉพาะฟอร์มแจ้งซ่อม
+const GAS_URL_GET  = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
+const GAS_URL_POST = "https://script.google.com/macros/s/AKfycbz0_zEg8a0ylriCAvcyQCadncKQ6nWVEThGmqo-3TtfdrpKL31VxoKVFlWHg75R7HA9aA/exec";
 const OBJ_OPTIONS = [
   {value:'เพื่อขาย/รอเบิกใช้',label:'เพื่อขาย/รอเบิกใช้'},
   {value:'สินทรัพย์ถาวร',label:'สินทรัพย์ถาวร'},
