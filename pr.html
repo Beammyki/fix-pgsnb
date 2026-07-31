@@ -752,9 +752,9 @@ function collectItems(){
     const prod=tr.querySelector('.item-prod')?.value.trim()||'';
     const item=tr.querySelector('.item-name')?.value.trim()||'';
     const objective=tr.querySelector('.item-obj')?.value||'';
-    const qty=tr.querySelector('.item-qty')?.value.trim()||'0';
+    const qty=parseFloat(tr.querySelector('.item-qty')?.value)||0;
     const unit=tr.querySelector('.item-unit')?.value.trim()||'';
-    const price=tr.querySelector('.item-price')?.value.trim()||'0';
+    const price=parseFloat(tr.querySelector('.item-price')?.value)||0;
     if(item||job||prod)rows.push({job,prod,item,objective,qty,unit,price});
   });
   return rows;
