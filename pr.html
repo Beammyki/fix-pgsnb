@@ -154,6 +154,17 @@
       .mobile-submit { display:block; }
       .summary-col .submit-btn, .summary-col .submit-hint { display:none; }
     }
+
+    /* PR LIST TABLE */
+    .pr-list-wrap { background:var(--card); border:1px solid var(--border); border-radius:var(--r-md); overflow-x:auto; margin-bottom:20px; }
+    .pr-table { width:100%; border-collapse:collapse; min-width:800px; }
+    .pr-table th { padding:14px 16px; text-align:left; font-size:12px; color:var(--text-sm); font-weight:600; text-transform:uppercase; border-bottom:1px solid var(--border); }
+    .pr-table td { padding:14px 16px; font-size:13px; color:var(--text); border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+    .pr-table tr:last-child td { border-bottom:none; }
+    .pr-table tbody tr { transition:var(--t); }
+    .pr-table tbody tr:hover { background:rgba(255,255,255,.03); }
+    .status-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:4px 10px; background:rgba(245,158,11,.15); color:var(--orange); border-radius:20px; white-space:nowrap; }
+    .empty-state { padding:40px 20px; text-align:center; color:var(--text-sm); }
   </style>
 </head>
 <body>
@@ -168,8 +179,8 @@
   <nav class="sidebar-nav">
     <div class="nav-label">เมนูหลัก</div>
     <a href="dashboard.html" class="nav-item"><i data-lucide="layout-dashboard" width="16" height="16"></i>ภาพรวม</a>
-    <button class="nav-item"><i data-lucide="file-text" width="16" height="16"></i>ใบ PR ทั้งหมด</button>
-    <button class="nav-item active"><i data-lucide="file-plus-2" width="16" height="16"></i>ส่งขออนุมัติงบ PR</button>
+    <button type="button" class="nav-item" id="nav-list" onclick="switchView('list')"><i data-lucide="file-text" width="16" height="16"></i>ใบ PR ทั้งหมด</button>
+    <button type="button" class="nav-item active" id="nav-form" onclick="switchView('form')"><i data-lucide="file-plus-2" width="16" height="16"></i>ส่งขออนุมัติงบ PR</button>
   </nav>
   <div class="sidebar-user">
     <div class="user-avatar">A</div>
@@ -192,7 +203,30 @@
   </header>
 
   <main class="page-body">
-    <form id="prForm" novalidate>
+    <!-- VIEW: PENDING PRs LIST -->
+    <div id="view-list" style="display:none;">
+      <div class="pr-list-wrap">
+        <table class="pr-table">
+          <thead>
+            <tr>
+              <th>รหัสอ้างอิง</th>
+              <th>วันที่แจ้งซ่อม</th>
+              <th>พนักงาน / ทะเบียนรถ</th>
+              <th>อาการเสีย</th>
+              <th>สถานะ</th>
+              <th style="text-align:right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="prListBody">
+            <tr><td colspan="6" class="empty-state">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW: PR FORM -->
+    <div id="view-form">
+      <form id="prForm" novalidate>
       <input type="hidden" id="ticketId" />
       <div class="form-layout">
         <div>
@@ -265,6 +299,7 @@
         </div>
       </div>
     </form>
+    </div> <!-- /view-form -->
   </main>
 </div>
 
@@ -288,13 +323,84 @@ document.addEventListener('DOMContentLoaded', () => {
   const tId = p.get('ticketId');
   document.getElementById('ticketId').value = tId || '';
   if (tId) {
+    switchView('form');
     loadTicketData(tId);
   } else {
-    showTicketError('ไม่พบรหัสแจ้งซ่อม', 'กรุณาเข้าสู่หน้านี้ผ่านลิงก์ที่ได้รับจาก LINE เท่านั้น');
+    // Default to list view if no ticketId is provided
+    switchView('list');
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('mobileSubmitBtn').disabled = true;
   }
 });
+
+function switchView(viewName) {
+  const vList = document.getElementById('view-list');
+  const vForm = document.getElementById('view-form');
+  const nList = document.getElementById('nav-list');
+  const nForm = document.getElementById('nav-form');
+  
+  if (viewName === 'list') {
+    vList.style.display = 'block';
+    vForm.style.display = 'none';
+    nList.classList.add('active');
+    nForm.classList.remove('active');
+    loadPendingPRs();
+  } else {
+    vList.style.display = 'none';
+    vForm.style.display = 'block';
+    nForm.classList.add('active');
+    nList.classList.remove('active');
+  }
+}
+
+function openPRForm(ticketId) {
+  const url = new URL(window.location);
+  url.searchParams.set('ticketId', ticketId);
+  window.history.pushState({}, '', url);
+  document.getElementById('ticketId').value = ticketId;
+  switchView('form');
+  loadTicketData(ticketId);
+}
+
+async function loadPendingPRs() {
+  const tbody = document.getElementById('prListBody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-state">กำลังโหลดข้อมูล...</td></tr>';
+  try {
+    const res = await fetch(`${GAS_URL_GET}?action=getPendingPRs`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">ไม่มีรายการใบ PR ที่รอส่งขออนุมัติ</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = data.map(item => `
+      <tr>
+        <td style="font-weight:600;color:var(--blue)">${item.ticketId}</td>
+        <td>${item.date ? new Date(item.date).toLocaleDateString('th-TH') : '-'}</td>
+        <td>
+          <div style="font-weight:500">${item.driverName || '-'}</div>
+          <div style="font-size:11px;color:var(--text-sm)">${item.licensePlate || '-'}</div>
+        </td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${item.partDamaged || ''}">
+          ${item.partDamaged || '-'}
+        </td>
+        <td><span class="status-badge"><i data-lucide="clock" width="12" height="12"></i> ${item.status || 'รอเปิด PR'}</span></td>
+        <td style="text-align:right">
+          <div style="display:inline-flex;gap:8px;">
+            ${item.sheetUrl && item.sheetUrl !== '-' ? `<a href="${item.sheetUrl}" target="_blank" class="btn btn-ghost" style="padding:6px 12px;font-size:12px"><i data-lucide="file-spreadsheet" width="14" height="14"></i> แก้ไขชีต</a>` : ''}
+            <button onclick="openPRForm('${item.ticketId}')" class="btn btn-primary" style="padding:6px 12px;font-size:12px">ส่งอนุมัติ</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    lucide.createIcons();
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--red)">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+  }
+}
+
 
 function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
