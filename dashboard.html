@@ -59,6 +59,21 @@
     }
 
     html { scroll-behavior: smooth; }
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 10000;
+      transform: translateY(-150%);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--brand-orange);
+      color: #08111F;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .skip-link:focus { transform: translateY(0); }
+
     body {
       font-family: 'Kanit', sans-serif;
       background: var(--bg-main);
@@ -368,6 +383,7 @@
     .kpi-icon.green  { background: rgba(16,185,129,0.15); color: var(--color-green); }
     .kpi-icon.yellow { background: rgba(245,158,11,0.15); color: var(--color-yellow); }
     .kpi-icon.red    { background: rgba(239,68,68,0.15);  color: var(--color-red); }
+    .kpi-icon.purple { background: rgba(139,92,246,0.15); color: var(--color-purple); }
 
     .kpi-value {
       font-size: 32px;
@@ -376,9 +392,12 @@
       line-height: 1;
       margin-bottom: 6px;
       letter-spacing: -1px;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
     }
 
     .kpi-value.red { color: var(--color-red); }
+    .kpi-value.yellow { color: var(--color-yellow); }
 
     .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
 
@@ -445,6 +464,7 @@
       border-radius: var(--radius-lg);
       padding: 22px;
       transition: var(--transition);
+      min-width: 0;
     }
 
     .card:hover { border-color: rgba(255,255,255,0.1); }
@@ -467,6 +487,9 @@
 
     .card-title svg { color: var(--text-secondary); }
 
+    .card-heading { display: flex; flex-direction: column; gap: 2px; }
+    .card-subtitle { font-size: 11px; color: var(--text-secondary); }
+
     .card-actions { display: flex; align-items: center; gap: 8px; }
 
     .select-sm {
@@ -481,7 +504,8 @@
       outline: none;
     }
 
-    .chart-container { position: relative; }
+    .chart-container { position: relative; min-width: 0; }
+    .chart-container canvas { max-width: 100% !important; }
 
     /* =============================================
        DOUGHNUT CARD
@@ -582,6 +606,22 @@
     .budget-total .label { font-size: 13px; color: var(--text-secondary); }
     .budget-total .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
     .budget-total .pct { font-size: 12px; color: var(--color-green); }
+
+    .data-quality-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 11px 14px;
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: var(--radius-sm);
+      background: rgba(245,158,11,0.08);
+      color: #FCD34D;
+      font-size: 12px;
+    }
+
+    .data-quality-notice[hidden] { display: none; }
+    .data-quality-notice svg { flex-shrink: 0; margin-top: 1px; }
 
     /* =============================================
        TABLE
@@ -725,6 +765,7 @@
     .status-pill.rejected .dot { background: var(--color-red); }
 
     .price-col { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .price-missing { color: var(--color-yellow); font-size: 12px; font-weight: 500; }
 
     .action-btn {
       width: 32px; height: 32px;
@@ -929,9 +970,38 @@
 
     @media (max-width: 600px) {
       .kpi-grid { grid-template-columns: 1fr; }
-      .header-controls { gap: 6px; }
+      .top-header {
+        height: auto;
+        min-height: var(--header-h);
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+      .header-title p { display: none; }
+      .header-controls {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+        gap: 8px;
+      }
       .last-update { display: none; }
-      .select-box { display: none; }
+      .select-box, .btn-refresh, .icon-btn, .hamburger-btn { min-height: 44px; }
+      .select-box { display: block; width: 100%; min-width: 0; font-size: 16px; }
+      .table-search input, .select-sm { font-size: 16px; }
+      .icon-btn { display: none; }
+      .btn-refresh { justify-content: center; }
+      .doughnut-wrap { flex-direction: column; align-items: stretch; }
+      .doughnut-chart-box { align-self: center; }
+      .doughnut-legend { width: 100%; }
+      .toast { min-width: 0; max-width: calc(100vw - 32px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     /* =============================================
@@ -947,6 +1017,7 @@
   </style>
 </head>
 <body>
+<a class="skip-link" href="#mainContent">ข้ามไปยังเนื้อหาหลัก</a>
 
 <!-- ========================
      SIDEBAR OVERLAY (Mobile)
@@ -1014,7 +1085,7 @@
 
     <div class="header-title">
       <h1>PR Dashboard</h1>
-      <p>ภาพรวมใบขออนุมัติซื้อแบบเรียลไทม์</p>
+      <p>สรุปค่าใช้จ่ายจากใบ PR ที่อนุมัติแล้วแบบเรียลไทม์</p>
     </div>
 
     <div class="header-controls">
@@ -1045,9 +1116,7 @@
       </select>
 
       <select class="select-box" id="yearFilter" aria-label="เลือกปี" onchange="applyFilters()">
-        <option value="2026">2026</option>
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
+        <option value="">กำลังโหลดปี...</option>
       </select>
 
       <button class="btn-refresh" id="refreshBtn" onclick="loadData()" aria-label="รีเฟรชข้อมูล">
@@ -1060,69 +1129,76 @@
   </header>
 
   <!-- PAGE BODY -->
-  <main class="page-body" role="main">
+  <main class="page-body" role="main" id="mainContent" tabindex="-1">
+
+    <div class="data-quality-notice" id="dataQualityNotice" role="status" hidden>
+      <i data-lucide="triangle-alert" width="16" height="16" aria-hidden="true"></i>
+      <span id="dataQualityText"></span>
+    </div>
 
     <!-- KPI CARDS -->
     <div class="kpi-grid" id="kpiGrid">
-      <!-- Card 1: ใบ PR ทั้งหมด -->
+      <!-- Card 1: ค่าใช้จ่ายรายเดือน -->
       <div class="kpi-card">
         <div class="kpi-top">
-          <span class="kpi-label">ใบ PR ทั้งหมด</span>
+          <span class="kpi-label" id="kpiMonthLabel">ค่าใช้จ่ายรายเดือน</span>
           <div class="kpi-icon blue" aria-hidden="true">
-            <i data-lucide="file-text" width="18" height="18"></i>
+            <i data-lucide="calendar-days" width="18" height="18"></i>
           </div>
         </div>
-        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-value" id="kpiMonthBudget">—</div>
         <div class="kpi-sub">
-          <span class="kpi-badge positive" id="kpiTotalBadge">
-            <i data-lucide="trending-up" width="11" height="11"></i>
+          <span class="kpi-badge neutral" id="kpiMonthDelta">
+            <i data-lucide="minus" width="11" height="11"></i>
             โหลด...
           </span>
         </div>
         <div class="kpi-sparkline-wrap"><canvas id="sparkline1"></canvas></div>
       </div>
 
-      <!-- Card 2: อนุมัติแล้ว -->
+      <!-- Card 2: ค่าใช้จ่ายรายปี -->
       <div class="kpi-card">
         <div class="kpi-top">
-          <span class="kpi-label">อนุมัติแล้ว</span>
+          <span class="kpi-label" id="kpiYearLabel">ค่าใช้จ่ายรายปี</span>
           <div class="kpi-icon green" aria-hidden="true">
-            <i data-lucide="check-circle-2" width="18" height="18"></i>
+            <i data-lucide="chart-no-axes-combined" width="18" height="18"></i>
           </div>
         </div>
-        <div class="kpi-value" id="kpiApproved">—</div>
-        <div class="kpi-sub" id="kpiApprovedSub">—</div>
-        <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill" id="kpiApprovedBar" style="width:0%;background:var(--color-green);"></div>
+        <div class="kpi-value" id="kpiYearBudget">—</div>
+        <div class="kpi-sub">
+          <span class="kpi-badge neutral" id="kpiYearDelta">
+            <i data-lucide="minus" width="11" height="11"></i>
+            โหลด...
+          </span>
         </div>
+        <div class="kpi-sparkline-wrap"><canvas id="sparkline2"></canvas></div>
       </div>
 
-      <!-- Card 3: รอดำเนินการ -->
+      <!-- Card 3: งบรออนุมัติ -->
       <div class="kpi-card">
         <div class="kpi-top">
-          <span class="kpi-label">รอดำเนินการ</span>
+          <span class="kpi-label">งบรออนุมัติ</span>
           <div class="kpi-icon yellow" aria-hidden="true">
             <i data-lucide="hourglass" width="18" height="18"></i>
           </div>
         </div>
-        <div class="kpi-value" id="kpiPending">—</div>
+        <div class="kpi-value yellow" id="kpiPendingBudget">—</div>
         <div class="kpi-sub" id="kpiPendingSub">—</div>
         <div class="kpi-progress-bar">
           <div class="kpi-progress-fill" id="kpiPendingBar" style="width:0%;background:var(--color-yellow);"></div>
         </div>
       </div>
 
-      <!-- Card 4: งบที่ใช้ไป -->
+      <!-- Card 4: ยอดอนุมัติสะสม -->
       <div class="kpi-card">
         <div class="kpi-top">
-          <span class="kpi-label">งบที่ใช้ไป</span>
-          <div class="kpi-icon red" aria-hidden="true">
-            <i data-lucide="wallet" width="18" height="18"></i>
+          <span class="kpi-label">ยอดอนุมัติสะสมทั้งหมด</span>
+          <div class="kpi-icon purple" aria-hidden="true">
+            <i data-lucide="landmark" width="18" height="18"></i>
           </div>
         </div>
-        <div class="kpi-value red" id="kpiBudget">—</div>
-        <div class="kpi-sub">ยอดอนุมัติสะสม</div>
-        <div class="kpi-sparkline-wrap"><canvas id="sparkline2"></canvas></div>
+        <div class="kpi-value" id="kpiAllTimeBudget">—</div>
+        <div class="kpi-sub" id="kpiAllTimeSub">เฉพาะใบ PR ที่อนุมัติแล้ว</div>
       </div>
     </div>
 
@@ -1133,17 +1209,17 @@
         <div class="card-header">
           <div class="card-title">
             <i data-lucide="bar-chart-2" width="16" height="16"></i>
-            งบประมาณรายแผนก
+            ค่าใช้จ่ายรายแผนก
           </div>
           <div class="card-actions">
             <select class="select-sm" id="deptChartType" onchange="updateDeptChart()" aria-label="ประเภทกราฟ">
               <option value="approved">งบอนุมัติ</option>
-              <option value="total">งบทั้งหมด</option>
+              <option value="pending">งบรออนุมัติ</option>
             </select>
           </div>
         </div>
         <div class="chart-container" style="height:220px;">
-          <canvas id="deptChart"></canvas>
+          <canvas id="deptChart" role="img" aria-label="กราฟค่าใช้จ่ายรายแผนกในช่วงเวลาที่เลือก"></canvas>
         </div>
       </div>
 
@@ -1157,7 +1233,7 @@
         </div>
         <div class="doughnut-wrap">
           <div class="doughnut-chart-box">
-            <canvas id="statusChart" width="160" height="160"></canvas>
+            <canvas id="statusChart" width="160" height="160" role="img" aria-label="กราฟสัดส่วนสถานะใบ PR"></canvas>
             <div class="doughnut-center">
               <div class="big-num" id="doughnutTotal">—</div>
               <div class="small-txt">รายการ</div>
@@ -1175,22 +1251,28 @@
       <!-- แนวโน้มงบประมาณ -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">
-            <i data-lucide="trending-up" width="16" height="16"></i>
-            แนวโน้มงบประมาณ
+          <div class="card-heading">
+            <div class="card-title">
+              <i data-lucide="trending-up" width="16" height="16"></i>
+              ค่าใช้จ่ายรายเดือน
+            </div>
+            <div class="card-subtitle" id="trendSubtitle">ยอดที่อนุมัติแล้ว แยกตามเดือน</div>
           </div>
         </div>
         <div class="chart-container" style="height:220px;">
-          <canvas id="trendChart"></canvas>
+          <canvas id="trendChart" role="img" aria-label="กราฟค่าใช้จ่ายที่อนุมัติแล้วรายเดือน เปรียบเทียบสองปี"></canvas>
         </div>
       </div>
 
       <!-- สัดส่วนงบประมาณ -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">
-            <i data-lucide="layers" width="16" height="16"></i>
-            สัดส่วนงบประมาณ
+          <div class="card-heading">
+            <div class="card-title">
+              <i data-lucide="layers" width="16" height="16"></i>
+              ค่าใช้จ่ายตามแผนก
+            </div>
+            <div class="card-subtitle">ยอดที่อนุมัติแล้วในช่วงเวลาที่เลือก</div>
           </div>
         </div>
         <div id="budgetBreakdown">
@@ -1231,9 +1313,9 @@
             <option value="ไม่อนุมัติงบ PR">ไม่อนุมัติ</option>
           </select>
 
-          <button class="btn-outline" onclick="exportCSV()" aria-label="ดูทั้งหมด">
-            <i data-lucide="external-link" width="13" height="13"></i>
-            ดูทั้งหมด
+          <button class="btn-outline" onclick="exportCSV()" aria-label="ส่งออกข้อมูลเป็น CSV">
+            <i data-lucide="download" width="13" height="13" aria-hidden="true"></i>
+            ส่งออก CSV
           </button>
         </div>
       </div>
@@ -1242,14 +1324,14 @@
         <table id="prTable" aria-label="ตารางรายการใบ PR">
           <thead>
             <tr>
-              <th onclick="sortTable('prId')" class="sorted" id="th-prId">รหัส PR <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
-              <th onclick="sortTable('date')" id="th-date">วันที่ <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
-              <th onclick="sortTable('dept')" id="th-dept">แผนก <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
-              <th>รายการ</th>
-              <th onclick="sortTable('price')" id="th-price">ราคา (บาท) <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
-              <th>ผู้ขอ</th>
-              <th onclick="sortTable('status')" id="th-status">สถานะ <i data-lucide="chevrons-up-down" width="12" height="12"></i></th>
-              <th style="text-align:center;">ดำเนินการ</th>
+              <th scope="col" role="button" tabindex="0" aria-sort="none" onclick="sortTable('prId')" onkeydown="handleSortKey(event,'prId')" id="th-prId">รหัส PR <i data-lucide="chevrons-up-down" width="12" height="12" aria-hidden="true"></i></th>
+              <th scope="col" role="button" tabindex="0" aria-sort="descending" onclick="sortTable('date')" onkeydown="handleSortKey(event,'date')" class="sorted" id="th-date">วันที่ขอ <i data-lucide="chevrons-up-down" width="12" height="12" aria-hidden="true"></i></th>
+              <th scope="col" role="button" tabindex="0" aria-sort="none" onclick="sortTable('dept')" onkeydown="handleSortKey(event,'dept')" id="th-dept">แผนก <i data-lucide="chevrons-up-down" width="12" height="12" aria-hidden="true"></i></th>
+              <th scope="col">รายการ</th>
+              <th scope="col" role="button" tabindex="0" aria-sort="none" onclick="sortTable('price')" onkeydown="handleSortKey(event,'price')" id="th-price">ราคา (บาท) <i data-lucide="chevrons-up-down" width="12" height="12" aria-hidden="true"></i></th>
+              <th scope="col">ผู้ขอ</th>
+              <th scope="col" role="button" tabindex="0" aria-sort="none" onclick="sortTable('status')" onkeydown="handleSortKey(event,'status')" id="th-status">สถานะ <i data-lucide="chevrons-up-down" width="12" height="12" aria-hidden="true"></i></th>
+              <th scope="col" style="text-align:center;">ดำเนินการ</th>
             </tr>
           </thead>
           <tbody id="tableBody">
@@ -1307,6 +1389,11 @@ const ROWS_PER_PAGE = 10;
 let sortCol = 'date';
 let sortDir = 'desc';
 let pendingDeleteId = null;
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MONTHS_TH_FULL = [
+  'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
+];
 
 /* =============================================
    CHART INSTANCES
@@ -1338,13 +1425,15 @@ async function loadData() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    allData = Array.isArray(data) ? data : [];
+    allData = (Array.isArray(data) ? data : []).map(normalizeDashboardRow);
 
     // อัปเดตเวลา
     const now = new Date();
     document.getElementById('lastUpdate').textContent =
       `อัปเดตล่าสุด ${now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`;
 
+    populatePeriodFilters();
+    updateDataQualityNotice();
     applyFilters();
     populateDeptFilter();
     showToast('โหลดข้อมูลสำเร็จ', 'success');
@@ -1359,6 +1448,58 @@ async function loadData() {
   }
 }
 
+function populatePeriodFilters() {
+  const yearSelect = document.getElementById('yearFilter');
+  const monthSelect = document.getElementById('monthFilter');
+  const current = new Date();
+  const previousYearValue = yearSelect.dataset.ready === 'true' ? yearSelect.value : '';
+  const years = new Set([current.getFullYear()]);
+
+  allData.forEach(row => {
+    const date = getReportDate(row);
+    if (date) years.add(date.getFullYear());
+  });
+
+  const sortedYears = [...years].sort((a, b) => b - a);
+  yearSelect.innerHTML = sortedYears
+    .map(year => `<option value="${year}">${toBuddhistYear(year)} (${year})</option>`)
+    .join('');
+
+  if (previousYearValue && years.has(parseInt(previousYearValue, 10))) {
+    yearSelect.value = previousYearValue;
+  } else if (years.has(current.getFullYear())) {
+    yearSelect.value = String(current.getFullYear());
+  } else {
+    yearSelect.value = String(sortedYears[0]);
+  }
+  yearSelect.dataset.ready = 'true';
+
+  if (monthSelect.dataset.ready !== 'true') {
+    monthSelect.value = String(current.getMonth() + 1);
+    monthSelect.dataset.ready = 'true';
+  }
+}
+
+function updateDataQualityNotice() {
+  const notice = document.getElementById('dataQualityNotice');
+  const missingPrice = allData.filter(row => !isRejected(row.status) && getPrice(row) === null).length;
+  const missingDate = allData.filter(row => !getReportDate(row)).length;
+  const issues = [];
+
+  if (missingPrice > 0) issues.push(`${missingPrice.toLocaleString('th-TH')} รายการยังอ่านยอดจากใบ PR ไม่ได้`);
+  if (missingDate > 0) issues.push(`${missingDate.toLocaleString('th-TH')} รายการไม่มีวันที่สำหรับรายงาน`);
+
+  if (issues.length === 0) {
+    notice.hidden = true;
+    return;
+  }
+
+  document.getElementById('dataQualityText').textContent =
+    `${issues.join(' และ ')} จึงยังไม่รวมรายการดังกล่าวในยอดสรุป`;
+  notice.hidden = false;
+  lucide.createIcons();
+}
+
 /* =============================================
    FILTER: เดือน & ปี
 ============================================= */
@@ -1367,8 +1508,8 @@ function applyFilters() {
   const year  = document.getElementById('yearFilter').value;
 
   filteredData = allData.filter(row => {
-    const d = new Date(row.date);
-    if (isNaN(d)) return true; // ถ้า parse ไม่ได้ ให้ผ่าน
+    const d = getReportDate(row);
+    if (!d) return false;
     const rowYear  = d.getFullYear().toString();
     const rowMonth = (d.getMonth() + 1).toString();
     if (year  && rowYear  !== year)  return false;
@@ -1390,43 +1531,91 @@ function applyFilters() {
    KPI CARDS
 ============================================= */
 function updateKPIs() {
-  const total    = filteredData.length;
-  const approved = filteredData.filter(r => isApproved(r.status)).length;
-  const pending  = filteredData.filter(r => isPending(r.status)).length;
-  const budget   = filteredData
-    .filter(r => isApproved(r.status))
-    .reduce((s, r) => s + (parseFloat(r.price) || 0), 0);
+  const current = new Date();
+  const selectedYear = parseInt(document.getElementById('yearFilter').value, 10) || current.getFullYear();
+  const selectedMonthValue = document.getElementById('monthFilter').value;
+  const selectedMonth = selectedMonthValue
+    ? parseInt(selectedMonthValue, 10)
+    : getLatestSpendMonth(selectedYear);
 
-  // Animate numbers
-  animateNumber('kpiTotal', total, '');
-  animateNumber('kpiApproved', approved, '');
-  animateNumber('kpiPending', pending, '');
-  animateNumber('kpiBudget', budget, '฿', true);
+  const approvedRows = allData.filter(r => isApproved(r.status));
+  const monthRows = approvedRows.filter(row => isInSpendPeriod(row, selectedYear, selectedMonth));
+  const previousMonthDate = new Date(selectedYear, selectedMonth - 2, 1);
+  const previousMonthRows = approvedRows.filter(row =>
+    isInSpendPeriod(row, previousMonthDate.getFullYear(), previousMonthDate.getMonth() + 1)
+  );
+  const yearRows = approvedRows.filter(row => isInSpendPeriod(row, selectedYear));
+  const previousYearRows = approvedRows.filter(row => isInSpendPeriod(row, selectedYear - 1));
+  const pendingRows = filteredData.filter(r => isPending(r.status));
+  const approvedFilteredRows = filteredData.filter(r => isApproved(r.status));
 
-  // Sub-labels & badges
-  const approvedPct = total > 0 ? Math.round((approved / total) * 100) : 0;
-  const pendingPct  = total > 0 ? Math.round((pending  / total) * 100) : 0;
+  const monthBudget = sumBudget(monthRows);
+  const previousMonthBudget = sumBudget(previousMonthRows);
+  const yearBudget = sumBudget(yearRows);
+  const previousYearBudget = sumBudget(previousYearRows);
+  const pendingBudget = sumBudget(pendingRows);
+  const pendingMissingCount = pendingRows.filter(row => getPrice(row) === null).length;
+  const approvedFilteredBudget = sumBudget(approvedFilteredRows);
+  const allTimeBudget = sumBudget(approvedRows);
+  const monthMissingCount = monthRows.filter(row => getPrice(row) === null).length;
+  const yearMissingCount = yearRows.filter(row => getPrice(row) === null).length;
+  const allTimeMissingCount = approvedRows.filter(row => getPrice(row) === null).length;
+  const budgetPool = approvedFilteredBudget + pendingBudget;
+  const pendingPct = budgetPool > 0 ? Math.round((pendingBudget / budgetPool) * 100) : 0;
 
-  document.getElementById('kpiTotalBadge').innerHTML =
-    `<i data-lucide="trending-up" width="11" height="11"></i> ${total > 0 ? '+รายการใหม่' : 'ไม่มีข้อมูล'}`;
+  document.getElementById('kpiMonthLabel').textContent =
+    `ค่าใช้จ่ายเดือน${MONTHS_TH_FULL[selectedMonth - 1]}`;
+  document.getElementById('kpiYearLabel').textContent =
+    `ค่าใช้จ่ายปี ${toBuddhistYear(selectedYear)}`;
 
-  document.getElementById('kpiApprovedSub').textContent =
-    total > 0 ? `${approvedPct}% ของรายการ` : 'ไม่มีข้อมูล';
+  animateNumber('kpiMonthBudget', monthBudget, '฿', true);
+  animateNumber('kpiYearBudget', yearBudget, '฿', true);
+  animateNumber('kpiPendingBudget', pendingBudget, '฿', true);
+  animateNumber('kpiAllTimeBudget', allTimeBudget, '฿', true);
 
-  document.getElementById('kpiPendingSub').textContent =
-    pending === 0 ? 'ไม่มีรายการค้าง' : `${pendingPct}% รอดำเนินการ`;
+  setDeltaBadge('kpiMonthDelta', monthBudget, previousMonthBudget, 'เทียบเดือนก่อน', monthMissingCount);
+  setDeltaBadge('kpiYearDelta', yearBudget, previousYearBudget, 'เทียบปีก่อน', yearMissingCount);
 
-  // Progress bars
+  document.getElementById('kpiPendingSub').textContent = pendingRows.length === 0
+    ? 'ไม่มีใบ PR รออนุมัติในช่วงนี้'
+    : `${pendingRows.length.toLocaleString('th-TH')} ใบ PR • ${pendingPct}% ของงบในช่วงนี้` +
+      (pendingMissingCount > 0 ? ` • ${pendingMissingCount.toLocaleString('th-TH')} รายการรอตรวจยอด` : '');
+  document.getElementById('kpiAllTimeSub').textContent =
+    `${approvedRows.length.toLocaleString('th-TH')} ใบ PR ที่อนุมัติแล้ว` +
+    (allTimeMissingCount > 0 ? ` • ${allTimeMissingCount.toLocaleString('th-TH')} รายการรอตรวจยอด` : '');
+
   setTimeout(() => {
-    document.getElementById('kpiApprovedBar').style.width = approvedPct + '%';
-    document.getElementById('kpiPendingBar').style.width  = pendingPct  + '%';
+    document.getElementById('kpiPendingBar').style.width = pendingPct + '%';
   }, 100);
 
-  // Sparklines
-  drawSparkline('sparkline1', filteredData.length > 0 ? buildMonthlyCount() : [], '#3B82F6');
-  drawSparkline('sparkline2', filteredData.length > 0 ? buildMonthlyBudget() : [], '#EF4444');
+  drawSparkline('sparkline1', buildDailyBudget(selectedYear, selectedMonth), '#3B82F6');
+  drawSparkline('sparkline2', buildMonthlyBudgetForYear(selectedYear), '#10B981');
 
   lucide.createIcons();
+}
+
+function setDeltaBadge(id, currentValue, previousValue, comparisonLabel, missingCount = 0) {
+  const el = document.getElementById(id);
+  let icon = 'minus';
+  let text = `0% ${comparisonLabel}`;
+
+  if (missingCount > 0) {
+    el.innerHTML = `<i data-lucide="triangle-alert" width="11" height="11"></i> ${missingCount.toLocaleString('th-TH')} รายการยังไม่รวมยอด`;
+    return;
+  }
+
+  if (previousValue > 0) {
+    const pct = ((currentValue - previousValue) / previousValue) * 100;
+    icon = pct > 0 ? 'arrow-up-right' : (pct < 0 ? 'arrow-down-right' : 'minus');
+    text = `${pct > 0 ? '+' : ''}${pct.toLocaleString('th-TH', { maximumFractionDigits: 1 })}% ${comparisonLabel}`;
+  } else if (currentValue > 0) {
+    icon = 'sparkles';
+    text = `เริ่มมีค่าใช้จ่าย • ${comparisonLabel}`;
+  } else {
+    text = `ยังไม่มีค่าใช้จ่าย • ${comparisonLabel}`;
+  }
+
+  el.innerHTML = `<i data-lucide="${icon}" width="11" height="11"></i> ${text}`;
 }
 
 function animateNumber(id, target, prefix = '', isCurrency = false) {
@@ -1439,6 +1628,11 @@ function animateNumber(id, target, prefix = '', isCurrency = false) {
     if (isCurrency) return prefix + new Intl.NumberFormat('th-TH').format(Math.round(v));
     return prefix + Math.round(v).toLocaleString('th-TH');
   };
+
+  if (REDUCED_MOTION) {
+    el.textContent = fmt(target);
+    return;
+  }
 
   const tick = (now) => {
     const elapsed = now - startTime;
@@ -1487,7 +1681,7 @@ function drawSparkline(canvasId, values, color) {
       maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: { x: { display: false }, y: { display: false } },
-      animation: { duration: 600 },
+      animation: { duration: REDUCED_MOTION ? 0 : 600 },
     }
   });
 
@@ -1500,14 +1694,20 @@ function drawSparkline(canvasId, values, color) {
 ============================================= */
 function updateDeptChart() {
   const depts = {};
+  const chartMode = document.getElementById('deptChartType').value;
   filteredData.forEach(row => {
+    if (chartMode === 'approved' && !isApproved(row.status)) return;
+    if (chartMode === 'pending' && !isPending(row.status)) return;
+    const price = getPrice(row);
+    if (price === null) return;
     const dept = row.dept || 'ไม่ระบุ';
     if (!depts[dept]) depts[dept] = 0;
-    if (isApproved(row.status)) depts[dept] += parseFloat(row.price) || 0;
+    depts[dept] += price;
   });
 
-  const labels  = Object.keys(depts);
-  const values  = Object.values(depts);
+  const ranked = Object.entries(depts).sort((a, b) => b[1] - a[1]);
+  const labels  = ranked.map(entry => entry[0]);
+  const values  = ranked.map(entry => entry[1]);
   const palette = ['#3B82F6','#6366F1','#8B5CF6','#0EA5E9','#2DD4BF','#38BDF8'];
   const colors  = labels.map((_, i) => palette[i % palette.length]);
 
@@ -1516,6 +1716,19 @@ function updateDeptChart() {
 
   deptChartInstance = new Chart(canvas, {
     type: 'bar',
+    plugins: [{
+      id: 'emptyState',
+      afterDraw(chart) {
+        if (values.length > 0) return;
+        const { ctx, chartArea } = chart;
+        ctx.save();
+        ctx.fillStyle = '#7E9BB5';
+        ctx.font = '13px Kanit';
+        ctx.textAlign = 'center';
+        ctx.fillText('ไม่มีข้อมูลค่าใช้จ่ายในช่วงนี้', (chartArea.left + chartArea.right) / 2, (chartArea.top + chartArea.bottom) / 2);
+        ctx.restore();
+      }
+    }],
     data: {
       labels,
       datasets: [{
@@ -1541,15 +1754,16 @@ function updateDeptChart() {
       },
       scales: {
         x: {
+          display: values.length > 0,
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: {
             color: '#7E9BB5', font: { family: 'Kanit', size: 11 },
             callback: v => '฿' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)
           }
         },
-        y: { grid: { display: false }, ticks: { color: '#7E9BB5', font: { family: 'Kanit', size: 12 } } }
+        y: { display: values.length > 0, grid: { display: false }, ticks: { color: '#7E9BB5', font: { family: 'Kanit', size: 12 } } }
       },
-      animation: { duration: 800, easing: 'easeInOutQuart' }
+      animation: { duration: REDUCED_MOTION ? 0 : 800, easing: 'easeInOutQuart' }
     }
   });
 }
@@ -1609,7 +1823,7 @@ function updateStatusChart() {
           }
         }
       },
-      animation: { animateRotate: true, duration: 800 }
+      animation: { animateRotate: !REDUCED_MOTION, duration: REDUCED_MOTION ? 0 : 800 }
     }
   });
 }
@@ -1621,17 +1835,20 @@ function updateTrendChart() {
   const MONTHS_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
   // สร้างข้อมูลรายเดือน 2 ปี
-  const yearSelected = parseInt(document.getElementById('yearFilter').value) || 2026;
+  const yearSelected = parseInt(document.getElementById('yearFilter').value, 10) || new Date().getFullYear();
   const monthly = {};
   [yearSelected, yearSelected - 1].forEach(yr => { monthly[yr] = new Array(12).fill(0); });
 
-  allData.forEach(row => {
-    const d = new Date(row.date);
-    if (isNaN(d)) return;
+  allData.filter(row => isApproved(row.status)).forEach(row => {
+    const d = getSpendDate(row);
+    if (!d) return;
     const yr = d.getFullYear();
     const mo = d.getMonth();
-    if (monthly[yr]) monthly[yr][mo] += parseFloat(row.price) || 0;
+    if (monthly[yr]) monthly[yr][mo] += getPrice(row) || 0;
   });
+
+  document.getElementById('trendSubtitle').textContent =
+    `ยอดอนุมัติรายเดือน • ปี ${toBuddhistYear(yearSelected)} เทียบ ${toBuddhistYear(yearSelected - 1)}`;
 
   const canvas = document.getElementById('trendChart');
   if (trendChartInstance) trendChartInstance.destroy();
@@ -1642,7 +1859,7 @@ function updateTrendChart() {
       labels: MONTHS_TH,
       datasets: [
         {
-          label: `ปี ${yearSelected}`,
+          label: `ปี ${toBuddhistYear(yearSelected)}`,
           data: monthly[yearSelected],
           borderColor: '#F97316',
           backgroundColor: 'rgba(249,115,22,0.08)',
@@ -1655,7 +1872,7 @@ function updateTrendChart() {
           pointBorderWidth: 2,
         },
         {
-          label: `ปี ${yearSelected - 1}`,
+          label: `ปี ${toBuddhistYear(yearSelected - 1)}`,
           data: monthly[yearSelected - 1],
           borderColor: '#3B82F6',
           backgroundColor: 'rgba(59,130,246,0.05)',
@@ -1690,6 +1907,7 @@ function updateTrendChart() {
           ticks: { color: '#7E9BB5', font: { family: 'Kanit', size: 11 } }
         },
         y: {
+          beginAtZero: true,
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: {
             color: '#7E9BB5',
@@ -1698,7 +1916,7 @@ function updateTrendChart() {
           }
         }
       },
-      animation: { duration: 900 }
+      animation: { duration: REDUCED_MOTION ? 0 : 900 }
     }
   });
 }
@@ -1710,12 +1928,16 @@ function updateBudgetBreakdown() {
   const depts = {};
   filteredData.forEach(row => {
     if (!isApproved(row.status)) return;
+    const price = getPrice(row);
+    if (price === null) return;
     const dept = row.dept || 'ไม่ระบุ';
-    depts[dept] = (depts[dept] || 0) + (parseFloat(row.price) || 0);
+    depts[dept] = (depts[dept] || 0) + price;
   });
 
   const total = Object.values(depts).reduce((s, v) => s + v, 0);
-  document.getElementById('budgetGrandTotal').textContent = '฿' + total.toLocaleString('th-TH');
+  document.getElementById('budgetGrandTotal').textContent = formatCurrency(total);
+  document.getElementById('budgetGrandPct').textContent =
+    `${filteredData.filter(row => isApproved(row.status)).length.toLocaleString('th-TH')} PR`;
 
   const colors = ['#F97316','#3B82F6','#8B5CF6','#10B981','#F59E0B'];
   const html = Object.entries(depts)
@@ -1724,15 +1946,15 @@ function updateBudgetBreakdown() {
       const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
       const color = colors[i % colors.length];
       return `
-        <div class="budget-item" title="${dept}: ฿${val.toLocaleString('th-TH')} (${pct}%)">
+        <div class="budget-item" title="${escapeAttribute(dept)}: ${formatCurrency(val)} (${pct}%)">
           <div class="budget-row">
-            <span class="budget-name">${dept}</span>
+            <span class="budget-name">${escapeHTML(dept)}</span>
             <span class="budget-pct">${pct}%</span>
           </div>
           <div class="progress-track">
             <div class="progress-fill" style="width:0%;background:${color};" data-width="${pct}"></div>
           </div>
-          <div class="budget-amount">฿${val.toLocaleString('th-TH')}</div>
+          <div class="budget-amount">${formatCurrency(val)}</div>
         </div>`;
     }).join('');
 
@@ -1772,18 +1994,30 @@ function sortTable(col) {
   else { sortCol = col; sortDir = 'desc'; }
 
   // Update header styles
-  document.querySelectorAll('th[id^="th-"]').forEach(el => el.classList.remove('sorted'));
+  document.querySelectorAll('th[id^="th-"]').forEach(el => {
+    el.classList.remove('sorted');
+    el.setAttribute('aria-sort', 'none');
+  });
   const thEl = document.getElementById(`th-${col}`);
-  if (thEl) thEl.classList.add('sorted');
+  if (thEl) {
+    thEl.classList.add('sorted');
+    thEl.setAttribute('aria-sort', sortDir === 'asc' ? 'ascending' : 'descending');
+  }
 
   sortTableData();
+}
+
+function handleSortKey(event, col) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  sortTable(col);
 }
 
 function sortTableData() {
   tableData.sort((a, b) => {
     let vA = a[sortCol] ?? '';
     let vB = b[sortCol] ?? '';
-    if (sortCol === 'price') { vA = parseFloat(vA) || 0; vB = parseFloat(vB) || 0; }
+    if (sortCol === 'price') { vA = getPrice(a) ?? -1; vB = getPrice(b) ?? -1; }
     if (sortCol === 'date')  { vA = new Date(vA); vB = new Date(vB); }
     if (vA < vB) return sortDir === 'asc' ? -1 : 1;
     if (vA > vB) return sortDir === 'asc' ? 1 : -1;
@@ -1819,16 +2053,19 @@ function renderTable() {
     const statusLabel = getStatusLabel(row.status);
     const dateStr     = formatDateTH(row.date);
     const itemText    = row.item || row.desc || '—';
-    const priceStr    = row.price ? '฿' + parseFloat(row.price).toLocaleString('th-TH') : '—';
+    const priceValue  = getPrice(row);
+    const priceCell   = priceValue === null
+      ? '<span class="price-missing">รอตรวจยอด</span>'
+      : formatCurrency(priceValue);
 
     return `
       <tr>
-        <td><span class="pr-id">${row.prId || '—'}</span></td>
+        <td><span class="pr-id">${escapeHTML(row.prId || '—')}</span></td>
         <td>${dateStr}</td>
-        <td><span class="dept-badge">${row.dept || '—'}</span></td>
-        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${itemText}">${itemText}</td>
-        <td class="price-col">${priceStr}</td>
-        <td>${row.requester || '—'}</td>
+        <td><span class="dept-badge">${escapeHTML(row.dept || '—')}</span></td>
+        <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeAttribute(itemText)}">${escapeHTML(itemText)}</td>
+        <td class="price-col">${priceCell}</td>
+        <td>${escapeHTML(row.requester || '—')}</td>
         <td>
           <span class="status-pill ${statusClass}">
             <span class="dot"></span>
@@ -1965,18 +2202,53 @@ function confirmDelete() {
 }
 
 function exportCSV() {
-  showToast('กำลังส่งออกข้อมูล...', 'info');
+  if (tableData.length === 0) {
+    showToast('ไม่มีข้อมูลในช่วงที่เลือกสำหรับส่งออก', 'error');
+    return;
+  }
+
+  const headers = ['PR ID','วันที่ขอ','วันที่อนุมัติ','แผนก','รายการ','ร้านค้า','ยอดเงิน (บาท)','ผู้ขอ','สถานะ'];
+  const rows = tableData.map(row => [
+    row.prId || '',
+    formatDateTH(row.date),
+    row.approvedDate ? formatDateTH(row.approvedDate) : '',
+    row.dept || '',
+    row.item || row.desc || '',
+    row.vendor || '',
+    getPrice(row) ?? '',
+    row.requester || '',
+    getStatusLabel(row.status),
+  ]);
+  const csv = '\uFEFF' + [headers, ...rows]
+    .map(columns => columns.map(csvCell).join(','))
+    .join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const year = document.getElementById('yearFilter').value || 'all';
+  const month = document.getElementById('monthFilter').value || 'all';
+  link.href = url;
+  link.download = `pr-expense-${year}-${String(month).padStart(2, '0')}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`ส่งออก ${tableData.length.toLocaleString('th-TH')} รายการแล้ว`, 'success');
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`;
 }
 
 /* =============================================
    POPULATE DEPT FILTER
 ============================================= */
 function populateDeptFilter() {
-  const depts = [...new Set(allData.map(r => r.dept).filter(Boolean))];
+  const depts = [...new Set(allData.map(r => r.dept).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
   const sel   = document.getElementById('deptFilterTable');
   const cur   = sel.value;
   sel.innerHTML = '<option value="">ทุกแผนก</option>' +
-    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+    depts.map(d => `<option value="${escapeAttribute(d)}">${escapeHTML(d)}</option>`).join('');
   sel.value = cur;
 }
 
@@ -2069,28 +2341,111 @@ function getStatusLabel(status) {
 }
 
 function formatDateTH(dateStr) {
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr || '—';
+  const d = parseDateSafe(dateStr);
+  if (!d) return escapeHTML(dateStr || '—');
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
 }
 
-function buildMonthlyCount() {
+function normalizeDashboardRow(row) {
+  const parsedPrice = parseMoney(row.price);
+  const hasValidPrice = parsedPrice !== null && row.hasValidPrice !== false;
+  const rawDept = (row.dept || '').toString().trim();
+  const dept = !rawDept || /^ดูใน/i.test(rawDept) ? 'ไม่ระบุ' : rawDept;
+
+  return {
+    ...row,
+    dept,
+    price: parsedPrice,
+    hasValidPrice,
+  };
+}
+
+function parseMoney(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (value === null || value === undefined) return null;
+
+  let text = value.toString().trim();
+  const negative = /^\(.*\)$/.test(text);
+  if (negative) text = text.slice(1, -1);
+  const normalized = text.replace(/[฿,\s]/g, '').replace(/บาท/gi, '');
+  if (!/^-?\d+(\.\d+)?$/.test(normalized)) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return null;
+  return negative ? -Math.abs(parsed) : parsed;
+}
+
+function getPrice(row) {
+  return row && row.hasValidPrice !== false ? parseMoney(row.price) : null;
+}
+
+function sumBudget(rows) {
+  return rows.reduce((sum, row) => sum + (getPrice(row) ?? 0), 0);
+}
+
+function parseDateSafe(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getSpendDate(row) {
+  return parseDateSafe(row.approvedDate) || parseDateSafe(row.date);
+}
+
+function getReportDate(row) {
+  return isApproved(row.status) ? getSpendDate(row) : parseDateSafe(row.date);
+}
+
+function isInSpendPeriod(row, year, month) {
+  const date = getSpendDate(row);
+  if (!date || date.getFullYear() !== year) return false;
+  return !month || date.getMonth() + 1 === month;
+}
+
+function getLatestSpendMonth(year) {
+  const months = allData
+    .filter(row => isApproved(row.status) && isInSpendPeriod(row, year))
+    .map(row => getSpendDate(row).getMonth() + 1);
+  if (months.length > 0) return Math.max(...months);
+  return year === new Date().getFullYear() ? new Date().getMonth() + 1 : 12;
+}
+
+function buildDailyBudget(year, month) {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const daily = new Array(daysInMonth).fill(0);
+  allData.filter(row => isApproved(row.status) && isInSpendPeriod(row, year, month)).forEach(row => {
+    const date = getSpendDate(row);
+    daily[date.getDate() - 1] += getPrice(row) || 0;
+  });
+  return daily;
+}
+
+function buildMonthlyBudgetForYear(year) {
   const monthly = new Array(12).fill(0);
-  filteredData.forEach(r => {
-    const d = new Date(r.date);
-    if (!isNaN(d)) monthly[d.getMonth()]++;
+  allData.filter(row => isApproved(row.status) && isInSpendPeriod(row, year)).forEach(row => {
+    const date = getSpendDate(row);
+    monthly[date.getMonth()] += getPrice(row) || 0;
   });
   return monthly;
 }
 
-function buildMonthlyBudget() {
-  const monthly = new Array(12).fill(0);
-  filteredData.filter(r => isApproved(r.status)).forEach(r => {
-    const d = new Date(r.date);
-    if (!isNaN(d)) monthly[d.getMonth()] += parseFloat(r.price) || 0;
-  });
-  return monthly;
+function formatCurrency(value) {
+  return '฿' + new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(value || 0);
+}
+
+function toBuddhistYear(year) {
+  return Number(year) + 543;
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  })[char]);
+}
+
+function escapeAttribute(value) {
+  return escapeHTML(value).replace(/`/g, '&#96;');
 }
 
 /* =============================================
